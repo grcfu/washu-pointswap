@@ -1,0 +1,13 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+venv/
+.venv/
+*.py[cod]
+
+# Node / React
+node_modules/
+.next/
+dist/
