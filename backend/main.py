@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware # <--- THIS LINE IS MISSING
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import os
@@ -41,34 +42,38 @@ def get_offers():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+class CreateOfferRequest(BaseModel):
+    seller_id: str
+    amount: int
+    price: float
+
+class DeleteOfferRequest(BaseModel):
+    user_id: str
+
 # --- THE SELL PAGE (Create Offer) ---
 @app.post("/offers")
-def create_offer(seller_id: str, amount: int, price: float):
-    """
-    This replaces her 'commit_offer' logic.
-    It checks the limits (150-2000) and saves to Supabase.
-    """
-    if amount < 150 or amount > 2000:
+def create_offer(body: CreateOfferRequest):
+    if body.amount < 150 or body.amount > 2000:
         raise HTTPException(status_code=400, detail="Amount must be between 150 and 2000 MP")
 
     new_offer = {
-        "seller_id": seller_id,
-        "amount": amount,
-        "price_per_point": price,
+        "seller_id": body.seller_id,
+        "amount": body.amount,
+        "price_per_point": body.price,
         "status": "active"
     }
-    
+
     response = supabase.table("offers").insert(new_offer).execute()
     return {"message": "Offer created!", "data": response.data}
 
 #removing an offer
 @app.delete("/offers/{offer_id}")
-def delete_offer(offer_id: str, user_id: str):
+def delete_offer(offer_id: str, body: DeleteOfferRequest):
     # Security check: Only delete if the user_id matches the seller_id
     response = supabase.table("offers") \
         .delete() \
         .eq("id", offer_id) \
-        .eq("seller_id", user_id) \
+        .eq("seller_id", body.user_id) \
         .execute()
     
     return {"message": "Offer removed", "data": response.data}

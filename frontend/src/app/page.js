@@ -1,20 +1,25 @@
 'use client'
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
 export default function Home() {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
   const [user, setUser] = useState(null);
   const [email, setEmail] = useState('');
   const [offers, setOffers] = useState([]);
-  
+
   const [amount, setAmount] = useState('');
   const [price, setPrice] = useState('');
-  const [statusMsg, setStatusMsg] = useState('');
+  const [listingMsg, setListingMsg] = useState('');
+  const [profileMsg, setProfileMsg] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [contactInfo, setContactInfo] = useState(''); 
+  const [contactInfo, setContactInfo] = useState('');
   const [showProfile, setShowProfile] = useState(false);
+  const [loadingOffers, setLoadingOffers] = useState(false);
+  const [posting, setPosting] = useState(false);
+  const [deleting, setDeleting] = useState(null);
 
   // 1. Auth & Session Setup
   useEffect(() => {
@@ -38,11 +43,16 @@ export default function Home() {
   }, [user]);
 
   // 3. Marketplace Logic
-  const fetchOffers = () => {
-    fetch(`${apiUrl}/offers`).then(res => res.json()).then(data => setOffers(data)).catch(err => console.error(err));
-  };
+  const fetchOffers = useCallback(() => {
+    setLoadingOffers(true);
+    fetch(`${apiUrl}/offers`)
+      .then(res => res.json())
+      .then(data => setOffers(data))
+      .catch(err => console.error(err))
+      .finally(() => setLoadingOffers(false));
+  }, []);
 
-  useEffect(() => { fetchOffers(); }, []);
+  useEffect(() => { fetchOffers(); }, [fetchOffers]);
 
   // Derived values
   const totalPreview = amount && price ? (parseFloat(amount) * parseFloat(price)).toFixed(2) : null;
@@ -51,41 +61,66 @@ export default function Home() {
   const handleLogin = async (e) => {
     e.preventDefault();
     const { error } = await supabase.auth.signInWithOtp({ email });
-    setStatusMsg(error ? error.message : 'Check your email for the magic link!');
+    setListingMsg(error ? error.message : 'Check your email for the magic link!');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!user) return;
-    setStatusMsg('Listing...');
+    const parsedAmount = parseInt(amount);
+    const parsedPrice = parseFloat(price);
+    if (parsedAmount < 150 || parsedAmount > 2000) {
+      setListingMsg('Amount must be between 150 and 2000.');
+      return;
+    }
+    if (!parsedPrice || parsedPrice <= 0) {
+      setListingMsg('Price must be greater than $0.');
+      return;
+    }
+    setPosting(true);
+    setListingMsg('');
     try {
-      const response = await fetch(`${apiUrl}/offers?seller_id=${user.id}&amount=${amount}&price=${price}`, { method: 'POST' });
-      if (response.ok) { setAmount(''); setPrice(''); fetchOffers(); setStatusMsg('Live on Market.'); }
-    } catch (err) { setStatusMsg('Failed to post.'); }
+      const response = await fetch(`${apiUrl}/offers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ seller_id: user.id, amount: parsedAmount, price: parsedPrice }),
+      });
+      if (response.ok) { setAmount(''); setPrice(''); fetchOffers(); setListingMsg('Live on Market.'); }
+      else { const data = await response.json(); setListingMsg(data.detail || 'Failed to post.'); }
+    } catch (err) { setListingMsg('Failed to post.'); }
+    finally { setPosting(false); }
   };
 
   const handleDelete = async (offerId) => {
     if (!confirm("Remove this listing?")) return;
+    setDeleting(offerId);
     try {
-      const response = await fetch(`${apiUrl}/offers/${offerId}?user_id=${user.id}`, { method: 'DELETE' });
+      const response = await fetch(`${apiUrl}/offers/${offerId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: user.id }),
+      });
       if (response.ok) fetchOffers();
     } catch (err) { console.error(err); }
+    finally { setDeleting(null); }
   };
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
-    setStatusMsg('Syncing profile...');
-    const { error } = await supabase.from('profiles').upsert({ 
-      id: user.id, 
-      email: user.email, 
-      first_name: firstName, 
-      last_name: lastName, 
-      contact_info: contactInfo, 
+    setProfileMsg('Syncing profile...');
+    const { error } = await supabase.from('profiles').upsert({
+      id: user.id,
+      email: user.email,
+      first_name: firstName,
+      last_name: lastName,
+      contact_info: contactInfo,
       updated_at: new Date().toISOString()
     });
     if (!error) {
-      setStatusMsg('Updated!');
-      setTimeout(() => { setShowProfile(false); setStatusMsg(''); }, 1000);
+      setProfileMsg('Updated!');
+      setTimeout(() => { setShowProfile(false); setProfileMsg(''); }, 1000);
+    } else {
+      setProfileMsg('Failed to update.');
     }
   };
 
@@ -99,7 +134,7 @@ export default function Home() {
             <input type="email" placeholder="WUSTL Email" className="w-full bg-white/50 border border-gray-100 rounded-2xl p-4 text-center outline-none focus:ring-2 focus:ring-red-100 transition-all" value={email} onChange={(e) => setEmail(e.target.value)} required />
             <button className="w-full py-4 bg-[#A51417] text-white rounded-full font-bold uppercase tracking-widest text-xs shadow-xl shadow-red-100 hover:bg-black transition-all">Request Magic Link</button>
           </form>
-          {statusMsg && <p className="mt-8 text-[10px] text-gray-400 uppercase italic">{statusMsg}</p>}
+          {listingMsg && <p className="mt-8 text-[10px] text-gray-400 uppercase italic">{listingMsg}</p>}
         </div>
       </div>
     );
@@ -137,7 +172,7 @@ export default function Home() {
               <input placeholder="GroupMe, email, or @handle" className="w-full bg-gray-50 p-4 rounded-2xl text-sm outline-none font-sans" value={contactInfo} onChange={(e) => setContactInfo(e.target.value)}/>
               <p className="text-[9px] text-gray-300">Shown to buyers when they tap Contact</p>
               <button type="submit" className="w-full py-4 bg-[#A51417] text-white text-[10px] font-bold uppercase tracking-widest rounded-full shadow-lg shadow-red-50 hover:bg-black transition-all">Save changes</button>
-              {statusMsg && <p className="text-center text-[10px] font-bold text-red-400 uppercase mt-2">{statusMsg}</p>}
+              {profileMsg && <p className="text-center text-[10px] font-bold text-red-400 uppercase mt-2">{profileMsg}</p>}
             </form>
             <div className="mt-6 pt-6 border-t border-gray-100">
               <button onClick={() => { if (confirm('Sign out?')) supabase.auth.signOut(); }} className="w-full py-3 text-[9px] font-black text-gray-400 hover:text-red-700 uppercase tracking-widest transition-all">
@@ -172,8 +207,8 @@ export default function Home() {
                   Total listing value: <span className="serif italic">${totalPreview}</span>
                 </p>
               )}
-              <button type="submit" className="w-full py-5 bg-[#A51417] text-white font-bold rounded-full hover:bg-black transition-all uppercase tracking-widest text-[10px] shadow-xl shadow-red-100/50">Post Offer</button>
-              {statusMsg && <p className="text-center text-[10px] font-bold uppercase text-[#A51417] mt-2">{statusMsg}</p>}
+              <button type="submit" disabled={posting} className="w-full py-5 bg-[#A51417] text-white font-bold rounded-full hover:bg-black transition-all uppercase tracking-widest text-[10px] shadow-xl shadow-red-100/50 disabled:opacity-50">{posting ? 'Posting...' : 'Post Offer'}</button>
+              {listingMsg && <p className="text-center text-[10px] font-bold uppercase text-[#A51417] mt-2">{listingMsg}</p>}
             </form>
           </section>
         </aside>
@@ -192,7 +227,11 @@ export default function Home() {
           </header>
 
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {offers.length === 0 ? (
+            {loadingOffers ? (
+              <div className="col-span-full py-32 text-center glass rounded-[3rem]">
+                <p className="serif italic text-gray-300 text-xl">Loading...</p>
+              </div>
+            ) : offers.length === 0 ? (
               <div className="col-span-full py-32 text-center glass rounded-[3rem]">
                 <p className="serif italic text-gray-300 text-xl">Market is empty...</p>
               </div>
@@ -216,12 +255,13 @@ export default function Home() {
                     </div>
                     
                     {user.id === offer.seller_id ? (
-                      <button onClick={() => handleDelete(offer.id)} className="w-full py-3 bg-red-50 text-[#A51417] text-[9px] font-black rounded-full hover:bg-red-100 uppercase tracking-widest transition-all">Sold</button>
+                      <button onClick={() => handleDelete(offer.id)} disabled={deleting === offer.id} className="w-full py-3 bg-red-50 text-[#A51417] text-[9px] font-black rounded-full hover:bg-red-100 uppercase tracking-widest transition-all disabled:opacity-50">{deleting === offer.id ? 'Removing...' : 'Sold'}</button>
                     ) : (
-                      <a href={offer.profiles?.contact_info?.includes('@') ? `mailto:${offer.profiles.contact_info}` : `tel:${offer.profiles.contact_info}`} 
-                         className="w-full py-3 bg-gray-900 text-white text-[9px] font-black rounded-full hover:bg-[#A51417] uppercase tracking-widest text-center block transition-all">
-                        Contact
-                      </a>
+                      offer.profiles?.contact_info ? (
+                        <span className="w-full py-3 bg-gray-900 text-white text-[9px] font-black rounded-full uppercase tracking-widest text-center block">{offer.profiles.contact_info}</span>
+                      ) : (
+                        <span className="w-full py-3 bg-gray-100 text-gray-400 text-[9px] font-black rounded-full uppercase tracking-widest text-center block">No contact</span>
+                      )
                     )}
                     <p className="mt-4 text-[8px] text-gray-300 font-bold uppercase tracking-widest truncate">by {offer.profiles?.first_name || "A Bear"}</p>
                   </div>
