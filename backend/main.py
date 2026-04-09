@@ -29,15 +29,17 @@ def home():
 # --- THE MARKETPLACE (Read Offers) ---
 @app.get("/offers")
 def get_offers():
-    """
-    This replaces her 'get_cached_offers' logic.
-    It fetches all 'active' offers from the database.
-    """
-    response = supabase.table("offers").select("*").eq("status", "active").execute()
-    
-    # Her logic used to sort by price/amount—Supabase does this for us!
-    # We can add .order("price_per_point") if we want.
-    return response.data
+    # We use the select string to define the 'Join'
+    # '*, profiles(...)' means: "Get all offer columns, PLUS these specific profile columns"
+    try:
+        response = supabase.table("offers") \
+            .select("*, profiles(first_name, last_name, contact_info)") \
+            .eq("status", "active") \
+            .execute()
+        
+        return response.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # --- THE SELL PAGE (Create Offer) ---
 @app.post("/offers")
@@ -58,3 +60,23 @@ def create_offer(seller_id: str, amount: int, price: float):
     
     response = supabase.table("offers").insert(new_offer).execute()
     return {"message": "Offer created!", "data": response.data}
+
+#removing an offer
+@app.delete("/offers/{offer_id}")
+def delete_offer(offer_id: int, user_id: str):
+    # Security check: Only delete if the user_id matches the seller_id
+    response = supabase.table("offers") \
+        .delete() \
+        .eq("id", offer_id) \
+        .eq("seller_id", user_id) \
+        .execute()
+    
+    return {"message": "Offer removed", "data": response.data}
+
+#If Railway is running me, use their port. If not, use 8000.
+if __name__ == "__main__":
+    import uvicorn
+    # Get the port from the environment (Railway sets this)
+    # Default to 8000 if we are running locally
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
