@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client, Client
@@ -17,11 +17,23 @@ app = FastAPI()
 # here, giving frontend permission to talk to back end
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://washu-pointswap.vercel.app"], # Your React app's address
+    allow_origins=["http://localhost:3000", "https://washu-pointswap.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Auth dependency: verify Supabase JWT and return user ID
+async def get_current_user(request: Request) -> str:
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+    token = auth_header.split(" ", 1)[1]
+    try:
+        user_response = supabase.auth.get_user(token)
+        return user_response.user.id
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
 
 @app.get("/")
 def home():
@@ -30,34 +42,30 @@ def home():
 # --- THE MARKETPLACE (Read Offers) ---
 @app.get("/offers")
 def get_offers():
-    # We use the select string to define the 'Join'
-    # '*, profiles(...)' means: "Get all offer columns, PLUS these specific profile columns"
     try:
         response = supabase.table("offers") \
             .select("*, profiles(first_name, last_name, contact_info)") \
             .eq("status", "active") \
             .execute()
-        
+
         return response.data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 class CreateOfferRequest(BaseModel):
-    seller_id: str
     amount: int
     price: float
 
-class DeleteOfferRequest(BaseModel):
-    user_id: str
-
 # --- THE SELL PAGE (Create Offer) ---
 @app.post("/offers")
-def create_offer(body: CreateOfferRequest):
+def create_offer(body: CreateOfferRequest, user_id: str = Depends(get_current_user)):
     if body.amount < 150 or body.amount > 2000:
         raise HTTPException(status_code=400, detail="Amount must be between 150 and 2000 MP")
+    if body.price <= 0:
+        raise HTTPException(status_code=400, detail="Price must be greater than 0")
 
     new_offer = {
-        "seller_id": body.seller_id,
+        "seller_id": user_id,
         "amount": body.amount,
         "price_per_point": body.price,
         "status": "active"
@@ -67,21 +75,18 @@ def create_offer(body: CreateOfferRequest):
     return {"message": "Offer created!", "data": response.data}
 
 #removing an offer
-@app.delete("/offers/{offer_id}")
-def delete_offer(offer_id: str, body: DeleteOfferRequest):
-    # Security check: Only delete if the user_id matches the seller_id
+@app.post("/offers/{offer_id}/delete")
+def delete_offer(offer_id: str, user_id: str = Depends(get_current_user)):
     response = supabase.table("offers") \
         .delete() \
         .eq("id", offer_id) \
-        .eq("seller_id", body.user_id) \
+        .eq("seller_id", user_id) \
         .execute()
-    
+
     return {"message": "Offer removed", "data": response.data}
 
 #If Railway is running me, use their port. If not, use 8000.
 if __name__ == "__main__":
     import uvicorn
-    # Get the port from the environment (Railway sets this)
-    # Default to 8000 if we are running locally
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)

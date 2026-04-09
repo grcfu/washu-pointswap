@@ -10,6 +10,34 @@ body {
   color: #1a1a1a;
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui;
   -webkit-font-smoothing: antialiased;
+  position: relative;
+}
+
+/* Gradient mesh background - very faint */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 30%, rgba(165, 20, 23, 0.04), transparent),
+    radial-gradient(ellipse 60% 80% at 80% 70%, rgba(165, 20, 23, 0.03), transparent),
+    radial-gradient(ellipse 70% 50% at 50% 10%, rgba(255, 200, 180, 0.05), transparent),
+    radial-gradient(ellipse 50% 70% at 70% 90%, rgba(165, 20, 23, 0.02), transparent);
+  pointer-events: none;
+}
+
+/* Noise/grain texture overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.3;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.4'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+  pointer-events: none;
 }
 
 .serif {
@@ -43,4 +71,113 @@ body {
 
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* Staggered card entrance */
+@keyframes cardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-enter {
+  opacity: 0;
+  animation: cardEnter 0.5s ease-out forwards;
+}
+
+/* Floating badge animation */
+@keyframes floatBadge {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.float-badge {
+  animation: floatBadge 2.5s ease-in-out infinite;
+}
+
+/* Skeleton loader pulse */
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, rgba(0,0,0,0.04) 25%, rgba(0,0,0,0.08) 50%, rgba(0,0,0,0.04) 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.5s ease-in-out infinite;
+  border-radius: 1rem;
+}
+
+@keyframes skeletonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Ripple effect on buttons */
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), rgba(255,255,255,0.4) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.1s;
+  pointer-events: none;
+}
+
+.ripple:active::after {
+  opacity: 1;
+  animation: rippleOut 0.5s ease-out;
+}
+
+@keyframes rippleOut {
+  from { transform: scale(0); opacity: 1; }
+  to { transform: scale(3); opacity: 0; }
+}
+
+/* Contact reveal animation */
+.contact-reveal {
+  animation: contactFlip 0.4s ease-out;
+}
+
+@keyframes contactFlip {
+  0% {
+    opacity: 0;
+    transform: rotateX(90deg) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: rotateX(0deg) scale(1);
+  }
+}
+
+/* Confetti / checkmark animation */
+@keyframes checkPop {
+  0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+  50% { transform: scale(1.2) rotate(0deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes confettiFade {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-12px); }
+}
+
+.success-check {
+  display: inline-block;
+  animation: checkPop 0.5s ease-out forwards;
+}
+
+.success-confetti {
+  animation: confettiFade 1.5s ease-out 0.5s forwards;
+  opacity: 1;
 }
