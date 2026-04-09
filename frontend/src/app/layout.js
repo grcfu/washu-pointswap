@@ -22,7 +22,7 @@ export default function RootLayout({ children }) {
       <head>
         <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%23A51417%22/></svg>" />
       </head>
-      <body className="min-h-full font-sans">{children}</body>
+      <body className="min-h-full">{children}</body>
     </html>
   );
 }

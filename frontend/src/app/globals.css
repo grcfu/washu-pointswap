@@ -6,22 +6,48 @@
 
 :root {
   --washu-red: #A51417;
-  --bg-cream: #fcfaf7;
+  --bg-cream: #fdfbf9;
 }
 
 body {
   background-color: var(--bg-cream);
-  color: #2d2d2d;
-  /* This ensures Geist Sans is the default font */
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(165, 20, 23, 0.02) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(165, 20, 23, 0.02) 0px, transparent 50%);
+  color: #1a1a1a;
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Custom class for your Pinterest-style headers */
 .serif {
   font-family: 'Lora', serif;
 }
 
-/* Fixes the default borders that were looking clunky */
-input {
-  border: none;
+.glass {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.premium-shadow {
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.05);
+}
+
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -12px rgba(165, 20, 23, 0.12);
+  border-color: rgba(165, 20, 23, 0.1);
+}
+
+.point-glow {
+  text-shadow: 0 0 20px rgba(165, 20, 23, 0.05);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
