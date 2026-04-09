@@ -1,12 +1,20 @@
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Inter:wght@300;400;600;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
   --washu-red: #A51417;
+  --bg-cream: #fcfaf7; /* Matching your Pinterest inspo's soft background */
 }
 
 body {
-  background-color: #f9fafb; /* A nice clean, light gray */
-  color: #111827;
+  background-color: var(--bg-cream);
+  color: #2d2d2d;
+  font-family: 'Inter', sans-serif;
+}
+
+h1, h2, h3, .serif {
+  font-family: 'Lora', serif;
 }
