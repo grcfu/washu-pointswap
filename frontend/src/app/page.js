@@ -14,6 +14,31 @@ export default function Home() {
   const [amount, setAmount] = useState('');
   const [price, setPrice] = useState('');
   const [statusMsg, setStatusMsg] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [contactInfo, setContactInfo] = useState(''); 
+
+  // talking to supabase
+  const handleUpdateProfile = async (e) => {
+  e.preventDefault();
+  setStatusMsg('Saving profile...');
+
+  const { error } = await supabase
+    .from('profiles')
+    .upsert({ 
+      id: user.id, // Supabase uses this to find the right row
+      first_name: firstName,
+      last_name: lastName,
+      contact_info: contactInfo,
+      updated_at: new Date().toISOString()
+    });
+
+  if (error) {
+    setStatusMsg(`Error: ${error.message}`);
+  } else {
+    setStatusMsg('Profile updated successfully!');
+  }
+};
 
   // 1. Auth Logic: Check if student is logged in
   useEffect(() => {
@@ -27,6 +52,23 @@ export default function Home() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+  if (user) {
+    supabase
+      .from('profiles')
+      .select('first_name, last_name, contact_info')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setFirstName(data.first_name || '');
+          setLastName(data.last_name || '');
+          setContactInfo(data.contact_info || '');
+        }
+      });
+  }
+}, [user]);
 
   // 2. Fetching the Marketplace (with our new Profile Join)
   const fetchOffers = () => {
@@ -154,6 +196,33 @@ export default function Home() {
               {statusMsg && <p className="text-center text-[10px] font-bold text-[#A51417] uppercase mt-2">{statusMsg}</p>}
             </form>
           </section>
+
+          <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+            <h2 className="text-lg font-bold mb-4 text-gray-900">Your Info</h2>
+            <form onSubmit={handleUpdateProfile} className="space-y-3">
+              <div className="flex gap-2">
+                <input 
+                  placeholder="First Name"
+                  className="w-1/2 p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none"
+                  value={firstName} onChange={(e) => setFirstName(e.target.value)}
+                />
+                <input 
+                  placeholder="Last Name"
+                  className="w-1/2 p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none"
+                  value={lastName} onChange={(e) => setLastName(e.target.value)}
+                />
+              </div>
+              <input 
+                placeholder="Email or GroupMe username"
+                className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none"
+                value={contactInfo} onChange={(e) => setContactInfo(e.target.value)}
+              />
+              <button type="submit" className="w-full py-2 bg-gray-900 text-white text-xs font-bold rounded-lg hover:bg-black transition">
+                Save Profile
+              </button>
+            </form>
+          </section>            
+
         </aside>
 
         {/* RIGHT COLUMN */}
