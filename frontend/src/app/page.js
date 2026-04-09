@@ -25,6 +25,7 @@ function SkeletonCard() {
 
 export default function Home() {
   const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [email, setEmail] = useState('');
   const [offers, setOffers] = useState([]);
 
@@ -49,7 +50,10 @@ export default function Home() {
 
   // 1. Auth & Session Setup
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => setUser(session?.user ?? null));
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setAuthLoading(false);
+    });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => setUser(session?.user ?? null));
     return () => subscription.unsubscribe();
   }, []);
@@ -210,6 +214,17 @@ export default function Home() {
       setProfileMsg('Failed to update.');
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-6">
+        <div className="text-center">
+          <h1 className="text-5xl font-light text-[#A51417] italic serif mb-4">Pointswap.</h1>
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.4em] animate-pulse">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
