@@ -18,6 +18,22 @@ export default function Home() {
   const [lastName, setLastName] = useState('');
   const [contactInfo, setContactInfo] = useState(''); 
 
+  //calling delete route
+  const handleDelete = async (offerId) => {
+  if (!confirm("Are you sure you want to mark this as sold?")) return;
+
+  try {
+    const response = await fetch(`http://localhost:8000/offers/${offerId}?user_id=${user.id}`, {
+      method: 'DELETE',
+    });
+    if (response.ok) {
+      fetchOffers(); // Refresh the list
+    }
+  } catch (err) {
+    console.error("Failed to delete:", err);
+  }
+};
+
   // talking to supabase
   const handleUpdateProfile = async (e) => {
   e.preventDefault();
@@ -241,12 +257,25 @@ export default function Home() {
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-bold text-[#A51417]">${(offer.amount * offer.price_per_point).toFixed(2)}</div>
-                  <a 
-                    href={offer.profiles?.contact_info ? `mailto:${offer.profiles.contact_info}?subject=Pointswap` : "#"}
-                    className="mt-3 inline-block px-6 py-2 bg-gray-900 text-white text-[10px] font-black rounded-full hover:bg-black transition uppercase tracking-widest"
-                  >
-                    Contact
-                  </a>
+                  
+                  <div className="flex flex-col gap-2 mt-3">
+                    {/* CONDITIONAL RENDERING: Only show DELETE to the owner */}
+                    {user.id === offer.seller_id ? (
+                      <button 
+                        onClick={() => handleDelete(offer.id)}
+                        className="px-6 py-2 bg-red-100 text-[#A51417] text-[10px] font-black rounded-full hover:bg-red-200 transition uppercase tracking-widest"
+                      >
+                        Mark as Sold
+                      </button>
+                    ) : (
+                      <a 
+                        href={offer.profiles?.contact_info ? `mailto:${offer.profiles.contact_info}?subject=Pointswap` : "#"}
+                        className="px-6 py-2 bg-gray-900 text-white text-[10px] font-black rounded-full hover:bg-black transition uppercase tracking-widest text-center"
+                      >
+                        Contact
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
             ))
