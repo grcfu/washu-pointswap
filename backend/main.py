@@ -63,7 +63,7 @@ def create_offer(seller_id: str, amount: int, price: float):
 
 #removing an offer
 @app.delete("/offers/{offer_id}")
-def delete_offer(offer_id: int, user_id: str):
+def delete_offer(offer_id: str, user_id: str):
     # Security check: Only delete if the user_id matches the seller_id
     response = supabase.table("offers") \
         .delete() \
