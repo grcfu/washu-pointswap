@@ -8,14 +8,13 @@ export default function Home() {
   const [email, setEmail] = useState('');
   const [offers, setOffers] = useState([]);
   
-  const [balance, setBalance] = useState('');
-  const [burnRate, setBurnRate] = useState(null);
   const [amount, setAmount] = useState('');
   const [price, setPrice] = useState('');
   const [statusMsg, setStatusMsg] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [contactInfo, setContactInfo] = useState(''); 
+  const [showProfile, setShowProfile] = useState(false); // Pop-up State
 
   const handleDelete = async (offerId) => {
     if (!confirm("Are you sure you want to mark this as sold?")) return;
@@ -31,7 +30,10 @@ export default function Home() {
     const { error } = await supabase.from('profiles').upsert({ 
       id: user.id, email: user.email, first_name: firstName, last_name: lastName, contact_info: contactInfo, updated_at: new Date().toISOString()
     });
-    setStatusMsg(error ? `Error: ${error.message}` : 'Profile updated!');
+    if (!error) {
+        setStatusMsg('Profile updated!');
+        setTimeout(() => { setShowProfile(false); setStatusMsg(''); }, 1000);
+    }
   };
 
   useEffect(() => {
@@ -55,13 +57,6 @@ export default function Home() {
 
   useEffect(() => { fetchOffers(); }, []);
 
-  useEffect(() => {
-    if (balance > 0) {
-      const diffDays = Math.ceil(Math.abs(new Date('2026-05-07') - new Date('2026-04-09')) / (1000 * 60 * 60 * 24));
-      setBurnRate((balance / diffDays).toFixed(2));
-    } else setBurnRate(null);
-  }, [balance]);
-
   const handleLogin = async (e) => {
     e.preventDefault();
     const { error } = await supabase.auth.signInWithOtp({ email });
@@ -77,17 +72,16 @@ export default function Home() {
     } catch (err) { setStatusMsg('Error posting.'); }
   };
 
-  // --- LOGIN UI (Pinterest Vibes) ---
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#fcfaf7] px-6">
         <div className="max-w-md w-full bg-white/40 backdrop-blur-xl p-12 rounded-[3rem] border border-white/50 shadow-2xl text-center">
-          <h1 className="text-5xl font-light text-[#A51417] mb-4 italic serif">WashU Pointswap</h1>
-          <p className="text-gray-400 mb-10 font-medium tracking-widest text-[10px] uppercase">The Unofficial Bear Marketplace</p>
+          <h1 className="text-5xl font-light text-[#A51417] mb-4 italic serif">Pointswap.</h1>
+          <p className="text-gray-400 mb-10 font-medium tracking-widest text-[10px] uppercase tracking-[0.3em]">The Unofficial Bear Marketplace</p>
           <form onSubmit={handleLogin} className="space-y-6">
             <input 
               type="email" placeholder="your_email@wustl.edu"
-              className="w-full p-4 bg-white/50 border-b border-gray-200 outline-none focus:border-[#A51417] transition-all text-center placeholder:text-gray-300"
+              className="w-full p-4 bg-transparent border-b border-gray-200 outline-none focus:border-[#A51417] transition-all text-center placeholder:text-gray-300 font-sans"
               value={email} onChange={(e) => setEmail(e.target.value)} required
             />
             <button className="w-full py-4 bg-[#A51417] text-white font-bold rounded-full hover:bg-black transition-all shadow-lg shadow-red-100 uppercase tracking-widest text-xs">
@@ -100,57 +94,55 @@ export default function Home() {
     );
   }
 
-  // --- DASHBOARD UI ---
   return (
-    <main className="min-h-screen pb-20">
+    <main className="min-h-screen pb-20 bg-[#fcfaf7] font-sans">
       {/* GLASS NAV */}
-      <nav className="bg-white/30 backdrop-blur-md border-b border-white/20 p-6 sticky top-0 z-50 flex justify-between items-center px-12">
+      <nav className="fixed top-0 w-full z-50 bg-white/30 backdrop-blur-md border-b border-white/20 p-6 px-12 flex justify-between items-center">
         <h1 className="text-2xl font-light text-[#A51417] italic serif">Pointswap.</h1>
-        <div className="flex items-center gap-8">
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest hidden md:block">{user.email}</span>
+        <div className="flex items-center gap-6">
+          <button onClick={() => setShowProfile(true)} className="w-10 h-10 bg-white/80 rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all">
+            <span className="text-xs">👤</span>
+          </button>
           <button onClick={() => supabase.auth.signOut()} className="text-[10px] font-black text-gray-300 hover:text-red-700 transition-all uppercase tracking-[0.3em]">Logout</button>
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-8 grid grid-cols-1 lg:grid-cols-12 gap-12 mt-16">
-        
-        {/* SIDEBAR (3 Cols) */}
-        <aside className="lg:col-span-4 space-y-10">
-          
-          <section className="bg-white/60 backdrop-blur-lg p-10 rounded-[3rem] border border-white/80 shadow-sm">
-            <h2 className="text-2xl serif mb-6 italic">Optimizer</h2>
-            <div className="space-y-4">
-              <input 
-                type="number" placeholder="Current MP balance..."
-                className="w-full p-4 bg-transparent border-b border-gray-100 outline-none focus:border-[#A51417] transition-all"
-                value={balance} onChange={(e) => setBalance(e.target.value)}
-              />
-              {burnRate && (
-                <div className="mt-8">
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Daily Spend Goal</p>
-                  <p className="text-5xl font-light text-[#A51417] serif">${burnRate}</p>
-                </div>
-              )}
-            </div>
-          </section>
-
-          <section className="bg-[#A51417] p-10 rounded-[3rem] text-white shadow-2xl">
-            <h2 className="text-2xl serif mb-6 italic">List Points</h2>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <input type="number" placeholder="Amount (e.g. 500)" className="w-full bg-transparent border-b border-white/20 p-2 outline-none focus:border-white transition-all placeholder:text-red-300" value={amount} onChange={(e) => setAmount(e.target.value)} required />
-              <input type="number" step="0.01" placeholder="Price per pt (e.g. 0.70)" className="w-full bg-transparent border-b border-white/20 p-2 outline-none focus:border-white transition-all placeholder:text-red-300" value={price} onChange={(e) => setPrice(e.target.value)} required />
-              <button type="submit" className="w-full py-4 bg-white text-[#A51417] font-bold rounded-full hover:bg-gray-100 transition-all uppercase tracking-widest text-[10px]">Post Offer</button>
+      {/* ACCOUNT SETTINGS POP-UP (MODAL) */}
+      {showProfile && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/10 backdrop-blur-sm p-6">
+          <div className="bg-white max-w-sm w-full p-10 rounded-[3rem] shadow-2xl relative border border-white">
+            <button onClick={() => setShowProfile(false)} className="absolute top-6 right-8 text-gray-300 hover:text-black">✕</button>
+            <h2 className="text-2xl serif italic mb-8">Profile Settings</h2>
+            <form onSubmit={handleUpdateProfile} className="space-y-4">
+              <div className="flex gap-2">
+                <input placeholder="First" className="w-1/2 bg-gray-50 p-3 rounded-2xl text-xs outline-none" value={firstName} onChange={(e) => setFirstName(e.target.value)}/>
+                <input placeholder="Last" className="w-1/2 bg-gray-50 p-3 rounded-2xl text-xs outline-none" value={lastName} onChange={(e) => setLastName(e.target.value)}/>
+              </div>
+              <input placeholder="Email or Phone Number" className="w-full bg-gray-50 p-3 rounded-2xl text-xs outline-none mb-4" value={contactInfo} onChange={(e) => setContactInfo(e.target.value)}/>
+              <button type="submit" className="w-full py-4 bg-[#A51417] text-white text-[10px] font-bold uppercase tracking-widest rounded-full shadow-lg">Save Profile</button>
+              {statusMsg && <p className="text-center text-[10px] font-bold text-red-400 mt-2">{statusMsg}</p>}
             </form>
-          </section>
+          </div>
+        </div>
+      )}
 
-          <section className="p-4 text-center">
-            <h2 className="text-xs font-bold text-gray-300 uppercase tracking-[0.5em] mb-4">Account Settings</h2>
-            <div className="flex gap-2 mb-4">
-              <input placeholder="First" className="w-1/2 bg-white/40 p-3 rounded-2xl text-xs outline-none" value={firstName} onChange={(e) => setFirstName(e.target.value)}/>
-              <input placeholder="Last" className="w-1/2 bg-white/40 p-3 rounded-2xl text-xs outline-none" value={lastName} onChange={(e) => setLastName(e.target.value)}/>
-            </div>
-            <input placeholder="Phone / GroupMe" className="w-full bg-white/40 p-3 rounded-2xl text-xs outline-none mb-4" value={contactInfo} onChange={(e) => setContactInfo(e.target.value)}/>
-            <button onClick={handleUpdateProfile} className="text-[10px] font-bold text-[#A51417] uppercase tracking-widest border-b border-[#A51417]">Save Profile</button>
+      <div className="max-w-7xl mx-auto px-8 pt-32 grid grid-cols-1 lg:grid-cols-12 gap-12">
+        
+        {/* SELL SECTION (4 Cols) */}
+        <aside className="lg:col-span-4">
+          <section className="bg-[#A51417] p-12 rounded-[3.5rem] text-white shadow-2xl sticky top-32">
+            <h2 className="text-3xl serif mb-8 italic">List Points</h2>
+            <form onSubmit={handleSubmit} className="space-y-8">
+              <div>
+                <label className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">Amount</label>
+                <input type="number" placeholder="e.g. 500" className="w-full bg-transparent border-b border-white/20 py-2 outline-none focus:border-white transition-all text-xl font-sans" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">Price per point</label>
+                <input type="number" step="0.01" placeholder="e.g. 0.70" className="w-full bg-transparent border-b border-white/20 py-2 outline-none focus:border-white transition-all text-xl font-sans" value={price} onChange={(e) => setPrice(e.target.value)} required />
+              </div>
+              <button type="submit" className="w-full py-5 bg-white text-[#A51417] font-bold rounded-full hover:bg-gray-100 transition-all uppercase tracking-widest text-[10px]">Post Offer</button>
+            </form>
           </section>
         </aside>
 
