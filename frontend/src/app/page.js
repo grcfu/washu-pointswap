@@ -1,53 +1,74 @@
 'use client'
 
 import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabaseClient';
 
 export default function Home() {
+  const [user, setUser] = useState(null);
+  const [email, setEmail] = useState('');
   const [offers, setOffers] = useState([]);
   
-  // Calculator State
+  // App State
   const [balance, setBalance] = useState('');
   const [burnRate, setBurnRate] = useState(null);
-
-  // Form State
   const [amount, setAmount] = useState('');
   const [price, setPrice] = useState('');
   const [statusMsg, setStatusMsg] = useState('');
 
-  // 1. Fetch Offers
+  // 1. Auth Logic: Check if student is logged in
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // 2. Fetching the Marketplace (with our new Profile Join)
   const fetchOffers = () => {
     fetch('http://localhost:8000/offers')
       .then(res => res.json())
       .then(data => setOffers(data))
-      .catch(err => console.error("Error:", err));
+      .catch(err => console.error("Fetch error:", err));
   };
 
   useEffect(() => {
     fetchOffers();
   }, []);
 
-  // 2. Calculator Logic
+  // 3. Calculator Logic (Math for the BuCS major)
   useEffect(() => {
     if (balance > 0) {
-      const today = new Date('2026-04-08'); // Keeping it pinned to today's date
+      const today = new Date('2026-04-08'); 
       const endDate = new Date('2026-05-07');
-      const diffTime = Math.abs(endDate - today);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
+      const diffDays = Math.ceil(Math.abs(endDate - today) / (1000 * 60 * 60 * 24));
       setBurnRate((balance / diffDays).toFixed(2));
     } else {
       setBurnRate(null);
     }
   }, [balance]);
 
-  // 3. Handle Form Submission
+  // 4. Handlers
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    const { error } = await supabase.auth.signInWithOtp({ email });
+    if (error) setStatusMsg(error.message);
+    else setStatusMsg('Check your wustl email for the login link!');
+  };
+
+  const handleLogout = () => supabase.auth.signOut();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!user) return;
     setStatusMsg('Posting...');
-    const TEST_USER_ID = "e4a92a2d-b447-410f-8ffe-c5308999f14a"; 
 
     try {
-      const response = await fetch(`http://localhost:8000/offers?seller_id=${TEST_USER_ID}&amount=${amount}&price=${price}`, {
+      const response = await fetch(`http://localhost:8000/offers?seller_id=${user.id}&amount=${amount}&price=${price}`, {
         method: 'POST',
       });
       if (response.ok) {
@@ -57,95 +78,106 @@ export default function Home() {
         const errorData = await response.json();
         setStatusMsg(`Error: ${errorData.detail}`);
       }
-    } catch (err) {
-      setStatusMsg('Failed to connect to server.');
-    }
+    } catch (err) { setStatusMsg('Server connection failed.'); }
   };
 
+  // UI: LOGIN SCREEN
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="max-w-md w-full bg-white p-10 rounded-3xl shadow-xl text-center">
+          <h1 className="text-3xl font-black text-[#A51417] mb-2">WashU Pointswap</h1>
+          <p className="text-gray-500 mb-8 font-medium italic">The unofficial Bear marketplace.</p>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <input 
+              type="email" placeholder="your_email@wustl.edu"
+              className="w-full p-4 bg-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-[#A51417] text-center"
+              value={email} onChange={(e) => setEmail(e.target.value)} required
+            />
+            <button className="w-full py-4 bg-[#A51417] text-white font-bold rounded-xl hover:bg-red-800 transition">
+              Send Magic Link
+            </button>
+          </form>
+          {statusMsg && <p className="mt-4 text-sm text-[#A51417] font-bold">{statusMsg}</p>}
+        </div>
+      </div>
+    );
+  }
+
+  // UI: MAIN DASHBOARD
   return (
-    <main className="min-h-screen bg-gray-50 pb-20">
-      <nav className="bg-white border-b border-gray-200 p-4 sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto flex justify-between items-center">
-          <h1 className="text-xl font-bold text-[#A51417]">WashU Pointswap</h1>
+    <main className="min-h-screen bg-gray-50 pb-20 font-sans">
+      <nav className="bg-white border-b border-gray-200 p-4 sticky top-0 z-10 flex justify-between items-center px-8">
+        <h1 className="text-xl font-bold text-[#A51417]">WashU Pointswap</h1>
+        <div className="flex items-center gap-4">
+          <span className="text-xs font-bold text-gray-400">{user.email}</span>
+          <button onClick={handleLogout} className="text-xs font-black text-gray-400 hover:text-red-700 uppercase tracking-widest">Logout</button>
         </div>
       </nav>
 
       <div className="max-w-5xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
         
-        {/* LEFT COLUMN: Tools & Sell Form */}
+        {/* LEFT COLUMN */}
         <aside className="md:col-span-1 space-y-6">
-          
-          {/* CALCULATOR CARD */}
           <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-            <h2 className="text-lg font-bold mb-1 text-gray-900">Burn Rate Optimizer</h2>
-            <p className="text-xs text-gray-500 mb-4">Expires May 7 • 29 days left</p>
-            
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-700">Current Point Balance</label>
-              <input 
-                type="number" 
-                placeholder="Enter points..."
-                className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-[#A51417]"
-                value={balance}
-                onChange={(e) => setBalance(e.target.value)}
-              />
-              
-              {burnRate && (
-                <div className="mt-4 p-4 bg-red-50 rounded-xl border border-red-100">
-                  <p className="text-xs text-[#A51417] font-bold uppercase tracking-widest">Target Spend</p>
-                  <p className="text-2xl font-black text-[#A51417]">${burnRate}</p>
-                  <p className="text-xs text-red-700 mt-1">per day until finals week.</p>
-                </div>
-              )}
-            </div>
+            <h2 className="text-lg font-bold mb-1 text-gray-900">Optimizer</h2>
+            <p className="text-[10px] text-gray-400 font-bold uppercase mb-4 tracking-widest">29 Days Left</p>
+            <input 
+              type="number" placeholder="Remaining Points..."
+              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg outline-none mb-3"
+              value={balance} onChange={(e) => setBalance(e.target.value)}
+            />
+            {burnRate && (
+              <div className="p-4 bg-red-50 rounded-xl border border-red-100">
+                <p className="text-[10px] text-[#A51417] font-black uppercase mb-1">Daily Burn Goal</p>
+                <p className="text-3xl font-black text-[#A51417] tracking-tighter">${burnRate}</p>
+              </div>
+            )}
           </section>
 
-          {/* SELL FORM CARD */}
           <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-            <h2 className="text-lg font-bold mb-4 text-gray-900">Post an Offer</h2>
+            <h2 className="text-lg font-bold mb-4 text-gray-900">Sell Points</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <input 
-                type="number" placeholder="Amount of points"
+                type="number" placeholder="Points to sell"
                 className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg outline-none"
                 value={amount} onChange={(e) => setAmount(e.target.value)} required
               />
               <input 
-                type="number" step="0.01" placeholder="Price per point ($)"
+                type="number" step="0.01" placeholder="Price per point (e.g. 0.70)"
                 className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg outline-none"
                 value={price} onChange={(e) => setPrice(e.target.value)} required
               />
               <button type="submit" className="w-full py-3 bg-[#A51417] text-white font-bold rounded-lg hover:bg-red-800 transition">
-                Create Offer
+                Post Offer
               </button>
-              {statusMsg && <p className="text-center text-xs text-[#A51417] mt-2 font-medium">{statusMsg}</p>}
+              {statusMsg && <p className="text-center text-[10px] font-bold text-[#A51417] uppercase mt-2">{statusMsg}</p>}
             </form>
           </section>
         </aside>
 
-        {/* RIGHT COLUMN: The Marketplace */}
+        {/* RIGHT COLUMN */}
         <section className="md:col-span-2 space-y-4">
-          <div className="flex justify-between items-end mb-4">
-            <h2 className="text-2xl font-bold text-gray-900">Marketplace</h2>
-            <span className="text-xs font-bold text-gray-400 uppercase">{offers.length} Active Offers</span>
-          </div>
-          
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Active Marketplace</h2>
           {offers.length === 0 ? (
-            <div className="bg-white p-12 text-center rounded-2xl border border-dashed border-gray-200">
-              <p className="text-gray-400">Loading the latest deals...</p>
-            </div>
+            <p className="text-gray-400 italic">No deals found yet...</p>
           ) : (
             offers.map((offer) => (
               <div key={offer.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center hover:border-red-200 transition">
                 <div>
-                  <div className="text-3xl font-black text-gray-900 italic">{offer.amount}</div>
-                  <div className="text-xs text-gray-500 font-bold uppercase tracking-tighter">Meal Points Available</div>
+                  <div className="text-4xl font-black text-gray-900 tracking-tighter">{offer.amount}</div>
+                  <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                    Sold by {offer.profiles?.first_name || "A Fellow Bear"}
+                  </div>
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-bold text-[#A51417]">${(offer.amount * offer.price_per_point).toFixed(2)}</div>
-                  <div className="text-[10px] text-gray-400 font-bold uppercase">Total Cost</div>
-                  <button className="mt-3 px-6 py-2 bg-gray-900 text-white text-xs font-black rounded-full hover:bg-black transition">
-                    CONTACT
-                  </button>
+                  <a 
+                    href={offer.profiles?.contact_info ? `mailto:${offer.profiles.contact_info}?subject=Pointswap` : "#"}
+                    className="mt-3 inline-block px-6 py-2 bg-gray-900 text-white text-[10px] font-black rounded-full hover:bg-black transition uppercase tracking-widest"
+                  >
+                    Contact
+                  </a>
                 </div>
               </div>
             ))
