@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
 export default function Home() {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
   const [user, setUser] = useState(null);
   const [email, setEmail] = useState('');
   const [offers, setOffers] = useState([]);
@@ -23,7 +24,7 @@ export default function Home() {
   if (!confirm("Are you sure you want to mark this as sold?")) return;
 
   try {
-    const response = await fetch(`http://localhost:8000/offers/${offerId}?user_id=${user.id}`, {
+    const response = await fetch(`${apiUrl}/offers/${offerId}?user_id=${user.id}`, {
       method: 'DELETE',
     });
     if (response.ok) {
@@ -43,6 +44,7 @@ export default function Home() {
     .from('profiles')
     .upsert({ 
       id: user.id, // Supabase uses this to find the right row
+      email: user.email,
       first_name: firstName,
       last_name: lastName,
       contact_info: contactInfo,
@@ -88,7 +90,7 @@ export default function Home() {
 
   // 2. Fetching the Marketplace (with our new Profile Join)
   const fetchOffers = () => {
-    fetch('http://localhost:8000/offers')
+    fetch(`${apiUrl}/offers`)
       .then(res => res.json())
       .then(data => setOffers(data))
       .catch(err => console.error("Fetch error:", err));
@@ -126,7 +128,7 @@ export default function Home() {
     setStatusMsg('Posting...');
 
     try {
-      const response = await fetch(`http://localhost:8000/offers?seller_id=${user.id}&amount=${amount}&price=${price}`, {
+      const response = await fetch(`${apiUrl}/offers?seller_id=${user.id}&amount=${amount}&price=${price}`, {
         method: 'POST',
       });
       if (response.ok) {
