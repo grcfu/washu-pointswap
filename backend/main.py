@@ -16,7 +16,7 @@ app = FastAPI()
 # here, giving frontend permission to talk to back end
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"], # Your React app's address
+    allow_origins=["http://localhost:3000", "https://washu-pointswap.vercel.app/"], # Your React app's address
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
