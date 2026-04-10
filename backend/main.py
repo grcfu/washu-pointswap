@@ -59,10 +59,12 @@ class CreateOfferRequest(BaseModel):
 # --- THE SELL PAGE (Create Offer) ---
 @app.post("/offers")
 def create_offer(body: CreateOfferRequest, user_id: str = Depends(get_current_user)):
-    if body.amount < 150 or body.amount > 2000:
-        raise HTTPException(status_code=400, detail="Amount must be between 150 and 2000 MP")
+    if body.amount < 100 or body.amount > 500:
+        raise HTTPException(status_code=400, detail="Amount must be between 100 and 500 MP")
     if body.price <= 0:
         raise HTTPException(status_code=400, detail="Price must be greater than 0")
+    if body.price > 3:
+        raise HTTPException(status_code=400, detail="Price cannot exceed $3.00 per point")
 
     new_offer = {
         "seller_id": user_id,

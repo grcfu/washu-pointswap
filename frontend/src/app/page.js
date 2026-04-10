@@ -4,7 +4,19 @@ import { supabase } from '../lib/supabaseClient';
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-// Skeleton card placeholder
+function timeAgo(dateString) {
+  if (!dateString) return '';
+  const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
+  if (seconds < 60) return 'just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return `${Math.floor(days / 7)}w ago`;
+}
+
 function SkeletonCard() {
   return (
     <div className="glass p-6 md:p-8 rounded-[2.5rem] border border-white/60 flex flex-col justify-between">
@@ -23,17 +35,32 @@ function SkeletonCard() {
   );
 }
 
+const isValidContact = (val) => {
+  if (!val) return true;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const phoneRegex = /^[\d\s\-+().]+$/;
+  return emailRegex.test(val) || phoneRegex.test(val);
+};
+
+const getContactHref = (info) => {
+  if (!info) return null;
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(info)) return `mailto:${info}`;
+  if (/^[\d\s\-+().]+$/.test(info)) return `tel:${info}`;
+  return null;
+};
+
 export default function Home() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [email, setEmail] = useState('');
+  const [showLogin, setShowLogin] = useState(false);
+  const [loginMsg, setLoginMsg] = useState('');
   const [offers, setOffers] = useState([]);
 
   const [amount, setAmount] = useState('');
   const [price, setPrice] = useState('');
   const [listingMsg, setListingMsg] = useState('');
   const [listingSuccess, setListingSuccess] = useState(false);
-  const [profileMsg, setProfileMsg] = useState('');
+  const [formCollapsed, setFormCollapsed] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [contactInfo, setContactInfo] = useState('');
@@ -48,17 +75,31 @@ export default function Home() {
   const [showMine, setShowMine] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
 
-  // 1. Auth & Session Setup
+  const verifyWustlEmail = async (session) => {
+    if (!session?.user) return null;
+    if (!session.user.email?.endsWith('@wustl.edu')) {
+      await supabase.auth.signOut();
+      setLoginMsg('Only @wustl.edu emails are allowed.');
+      setShowLogin(true);
+      return null;
+    }
+    return session.user;
+  };
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const verified = await verifyWustlEmail(session);
+      setUser(verified);
       setAuthLoading(false);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => setUser(session?.user ?? null));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const verified = await verifyWustlEmail(session);
+      setUser(verified);
+      if (verified) setShowLogin(false);
+    });
     return () => subscription.unsubscribe();
   }, []);
 
-  // 2. Fetch Profile Data when user is logged in + first-visit help
   useEffect(() => {
     if (user) {
       supabase.from('profiles').select('*').eq('id', user.id).single()
@@ -76,7 +117,6 @@ export default function Home() {
     }
   }, [user]);
 
-  // 3. Marketplace Logic
   const fetchOffers = useCallback(() => {
     setLoadingOffers(true);
     setFetchError(null);
@@ -92,9 +132,9 @@ export default function Home() {
 
   useEffect(() => { fetchOffers(); }, [fetchOffers]);
 
-  // Derived values
   const perPointPreview = amount && price && parseFloat(amount) > 0 ? (parseFloat(price) / parseFloat(amount)).toFixed(4) : null;
   const bestValueId = offers.length > 0 ? offers.reduce((best, o) => o.price_per_point < best.price_per_point ? o : best, offers[0]).id : null;
+  const formReady = firstName.trim() && contactInfo.trim() && amount && price;
 
   const filteredOffers = showMine ? offers.filter(o => o.seller_id === user?.id) : offers;
   const sortedOffers = [...filteredOffers].sort((a, b) => {
@@ -118,39 +158,60 @@ export default function Home() {
     };
   };
 
-  const [showEmailLogin, setShowEmailLogin] = useState(false);
+  const requireAuth = () => {
+    if (!user) { setShowLogin(true); return false; }
+    return true;
+  };
 
   const handleGoogleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: window.location.origin },
     });
-    if (error) setListingMsg(error.message);
-  };
-
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    const { error } = await supabase.auth.signInWithOtp({ email });
-    setListingMsg(error ? error.message : 'Check your email for the magic link!');
+    if (error) setLoginMsg(error.message);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!user) return;
+    if (!requireAuth()) return;
+    if (!firstName.trim()) {
+      setListingMsg('Enter your name so buyers know who you are.');
+      return;
+    }
+    if (!contactInfo.trim()) {
+      setListingMsg('Enter your contact info so buyers can reach you.');
+      return;
+    }
+    if (!isValidContact(contactInfo)) {
+      setListingMsg('Contact must be a valid email or phone number.');
+      return;
+    }
     const parsedAmount = parseInt(amount);
     const parsedPrice = parseFloat(price);
-    if (parsedAmount < 150 || parsedAmount > 2000) {
-      setListingMsg('Amount must be between 150 and 2000.');
+    if (parsedAmount < 100 || parsedAmount > 500) {
+      setListingMsg('Amount must be between 100 and 500.');
       return;
     }
     if (!parsedPrice || parsedPrice <= 0) {
       setListingMsg('Price must be greater than $0.');
       return;
     }
+    if (parsedPrice / parsedAmount > 3) {
+      setListingMsg('Price cannot exceed $3.00 per point.');
+      return;
+    }
     setPosting(true);
     setListingMsg('');
     setListingSuccess(false);
     try {
+      await supabase.from('profiles').upsert({
+        id: user.id,
+        email: user.email,
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        contact_info: contactInfo.trim(),
+        updated_at: new Date().toISOString()
+      });
       const response = await fetch(`${apiUrl}/offers`, {
         method: 'POST',
         headers: await getAuthHeaders(),
@@ -161,11 +222,12 @@ export default function Home() {
         setPrice('');
         fetchOffers();
         setListingSuccess(true);
+        setFormCollapsed(true);
         setListingMsg('Live on Market.');
         setTimeout(() => setListingSuccess(false), 3000);
       }
-      else { const data = await response.json(); setListingMsg(data.detail || 'Failed to post.'); }
-    } catch (err) { setListingMsg('Failed to post.'); }
+      else { const data = await response.json(); setListingMsg(data.detail || 'Something went wrong — try again.'); }
+    } catch (err) { setListingMsg('Could not connect to server — check your internet and try again.'); }
     finally { setPosting(false); }
   };
 
@@ -180,54 +242,22 @@ export default function Home() {
       if (response.ok) { fetchOffers(); setListingMsg(''); }
       else {
         const errData = await response.json().catch(() => ({}));
-        setListingMsg(errData.detail || `Failed to remove listing (${response.status}).`);
+        setListingMsg(errData.detail || 'Could not remove listing — try again.');
       }
     } catch (err) {
-      setListingMsg('Failed to remove listing — network error.');
+      setListingMsg('Could not connect to server — check your internet and try again.');
     }
     finally { setDeleting(null); }
   };
 
-  const isValidContact = (val) => {
-    if (!val) return true;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const phoneRegex = /^[\d\s\-+().]+$/;
-    return emailRegex.test(val) || phoneRegex.test(val);
-  };
-
-  const getContactHref = (info) => {
-    if (!info) return null;
-    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(info)) return `mailto:${info}`;
-    if (/^[\d\s\-+().]+$/.test(info)) return `tel:${info}`;
-    return null;
-  };
-
-  const handleUpdateProfile = async (e) => {
-    e.preventDefault();
-    if (contactInfo && !isValidContact(contactInfo)) {
-      setProfileMsg('Contact must be a valid email or phone number.');
-      return;
-    }
-    setProfileMsg('Syncing profile...');
-    const { error } = await supabase.from('profiles').upsert({
-      id: user.id,
-      email: user.email,
-      first_name: firstName,
-      last_name: lastName,
-      contact_info: contactInfo,
-      updated_at: new Date().toISOString()
-    });
-    if (!error) {
-      setProfileMsg('Updated!');
-      setTimeout(() => { setShowProfile(false); setProfileMsg(''); }, 1000);
-    } else {
-      setProfileMsg('Failed to update.');
-    }
+  const handleContactClick = (offerId) => {
+    if (!requireAuth()) return;
+    setRevealedContact(offerId);
   };
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-6">
+      <div className="min-h-screen flex items-center justify-center px-6 page-transition">
         <div className="text-center">
           <h1 className="text-5xl font-light text-[#A51417] italic serif mb-4">Pointswap.</h1>
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.4em] animate-pulse">Loading...</p>
@@ -236,33 +266,8 @@ export default function Home() {
     );
   }
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-6">
-        <div className="max-w-md w-full glass p-12 rounded-[3rem] premium-shadow text-center">
-          <h1 className="text-5xl font-light text-[#A51417] italic serif mb-4">Pointswap.</h1>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.4em] mb-12">The Unofficial Marketplace</p>
-          <button onClick={handleGoogleLogin} className="w-full py-4 bg-white border border-gray-200 rounded-full font-bold text-sm text-gray-700 shadow-md hover:shadow-lg hover:border-gray-300 transition-all flex items-center justify-center gap-3 ripple">
-            <svg width="18" height="18" viewBox="0 0 18 18"><path d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z" fill="#4285F4"/><path d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z" fill="#34A853"/><path d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z" fill="#FBBC05"/><path d="M8.98 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.59A8 8 0 0 0 1.83 5.4L4.5 7.49A4.77 4.77 0 0 1 8.98 3.58z" fill="#EA4335"/></svg>
-            Continue with Google
-          </button>
-          {!showEmailLogin ? (
-            <button onClick={() => setShowEmailLogin(true)} className="mt-6 text-[10px] font-bold text-gray-300 hover:text-gray-500 uppercase tracking-widest transition-all">Use email instead</button>
-          ) : (
-            <form onSubmit={handleLogin} className="space-y-4 mt-8 pt-8 border-t border-gray-100">
-              <input type="email" placeholder="WUSTL Email" className="w-full bg-white/50 border border-gray-100 rounded-2xl p-4 text-center outline-none focus:ring-2 focus:ring-red-100 transition-all" value={email} onChange={(e) => setEmail(e.target.value)} required />
-              <button className="w-full py-4 bg-[#A51417] text-white rounded-full font-bold uppercase tracking-widest text-xs shadow-xl shadow-red-100 hover:bg-black transition-all ripple">Send Magic Link</button>
-            </form>
-          )}
-          {listingMsg && <p className="mt-8 text-[10px] text-gray-400 uppercase italic">{listingMsg}</p>}
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <main className="min-h-screen pb-32">
-      {/* NAV - Glass Header */}
+    <main className="min-h-screen page-transition flex flex-col">
       <nav className="fixed top-0 w-full z-50 glass border-b border-white/40 h-24 flex items-center justify-center">
         <div className="max-w-7xl w-full px-8 md:px-16 flex justify-between items-center">
           <div className="flex flex-col">
@@ -271,143 +276,164 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-3">
             <button onClick={() => setShowHelp(true)} className="w-10 h-10 glass rounded-full flex items-center justify-center premium-shadow hover:scale-110 transition-all text-gray-400 text-sm font-bold">?</button>
-            <button onClick={() => setShowProfile(true)} className="w-10 h-10 glass rounded-full flex items-center justify-center premium-shadow hover:scale-110 transition-all ripple">👤</button>
+            {user ? (
+              <button onClick={() => setShowProfile(true)} className="w-10 h-10 glass rounded-full flex items-center justify-center premium-shadow hover:scale-110 transition-all ripple">👤</button>
+            ) : (
+              <button onClick={() => setShowLogin(true)} className="px-5 py-2 bg-[#A51417] text-white text-[9px] font-black uppercase tracking-widest rounded-full hover:bg-black transition-all ripple">Sign in</button>
+            )}
           </div>
         </div>
       </nav>
 
-      {/* ACCOUNT MODAL */}
-      {showProfile && (
+      {/* LOGIN MODAL */}
+      {showLogin && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/10 backdrop-blur-md p-6">
-          <div className="bg-white/90 max-w-sm w-full p-10 rounded-[2.5rem] premium-shadow relative border border-white">
+          <div className="bg-white/90 max-w-md w-full p-12 rounded-[2.5rem] premium-shadow relative border border-white text-center">
+            <button onClick={() => { setShowLogin(false); setLoginMsg(''); }} className="absolute top-6 right-8 text-gray-300 hover:text-black transition-colors">✕</button>
+            <h2 className="text-3xl font-light text-[#A51417] italic serif mb-2">Sign in</h2>
+            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-8">use your @wustl.edu Google account</p>
+            <button onClick={handleGoogleLogin} className="w-full py-4 bg-white border border-gray-200 rounded-full font-bold text-sm text-gray-700 shadow-md hover:shadow-lg hover:border-gray-300 transition-all flex items-center justify-center gap-3 ripple">
+              <svg width="18" height="18" viewBox="0 0 18 18"><path d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z" fill="#4285F4"/><path d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z" fill="#34A853"/><path d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z" fill="#FBBC05"/><path d="M8.98 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.59A8 8 0 0 0 1.83 5.4L4.5 7.49A4.77 4.77 0 0 1 8.98 3.58z" fill="#EA4335"/></svg>
+              Continue with Google
+            </button>
+            {loginMsg && <p className="mt-8 text-xs font-bold text-[#A51417] bg-red-50 px-4 py-3 rounded-2xl">{loginMsg}</p>}
+          </div>
+        </div>
+      )}
+
+      {/* ACCOUNT MODAL */}
+      {showProfile && user && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/10 backdrop-blur-md p-6">
+          <div className="bg-white/90 max-w-xs w-full p-10 rounded-[2.5rem] premium-shadow relative border border-white text-center">
             <button onClick={() => setShowProfile(false)} className="absolute top-6 right-8 text-gray-300 hover:text-black transition-colors">✕</button>
             <h2 className="text-2xl serif italic mb-2">Account</h2>
             <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-8">{user.email}</p>
-            <form onSubmit={handleUpdateProfile} className="space-y-4">
-              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Profile</p>
-              <div className="flex gap-2">
-                <input placeholder="First" className="w-1/2 bg-gray-50 p-4 rounded-2xl text-sm outline-none font-sans" value={firstName} onChange={(e) => setFirstName(e.target.value)}/>
-                <input placeholder="Last" className="w-1/2 bg-gray-50 p-4 rounded-2xl text-sm outline-none font-sans" value={lastName} onChange={(e) => setLastName(e.target.value)}/>
-              </div>
-              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest pt-2">Contact info</p>
-              <input placeholder="Email or phone number" className="w-full bg-gray-50 p-4 rounded-2xl text-sm outline-none font-sans" value={contactInfo} onChange={(e) => setContactInfo(e.target.value)}/>
-              <p className="text-[9px] text-gray-300">Shown to buyers when they tap Contact</p>
-              <button type="submit" className="w-full py-4 bg-[#A51417] text-white text-[10px] font-bold uppercase tracking-widest rounded-full shadow-lg shadow-red-50 hover:bg-black transition-all ripple">Save changes</button>
-              {profileMsg && <p className="text-center text-[10px] font-bold text-red-400 uppercase mt-2">{profileMsg}</p>}
-            </form>
-            <div className="mt-6 pt-6 border-t border-gray-100">
-              <button onClick={() => { if (confirm('Sign out?')) supabase.auth.signOut(); }} className="w-full py-3 text-[9px] font-black text-gray-400 hover:text-red-700 uppercase tracking-widest transition-all">
-                Sign out
-              </button>
-            </div>
+            <button onClick={() => { if (confirm('Sign out?')) { supabase.auth.signOut(); setShowProfile(false); } }} className="w-full py-4 bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-red-50 hover:text-[#A51417] transition-all">
+              Sign out
+            </button>
           </div>
         </div>
       )}
 
       {/* HOW IT WORKS MODAL */}
       {showHelp && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/10 backdrop-blur-md p-6">
-          <div className="bg-white/90 max-w-md w-full p-10 rounded-[2.5rem] premium-shadow relative border border-white">
-            <button onClick={() => setShowHelp(false)} className="absolute top-6 right-8 text-gray-300 hover:text-black transition-colors">✕</button>
-            <h2 className="text-2xl serif italic mb-2">How It Works</h2>
-            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-8">Buy & sell MarketPoints</p>
-
-            <div className="space-y-6">
-              <div className="flex gap-4 items-start">
-                <span className="w-8 h-8 bg-red-50 text-[#A51417] rounded-full flex items-center justify-center text-sm font-bold shrink-0">1</span>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/10 backdrop-blur-md p-4 md:p-6">
+          <div className="bg-white/95 max-w-lg w-full p-8 md:p-12 rounded-[2rem] md:rounded-[2.5rem] premium-shadow relative border border-white max-h-[90vh] overflow-y-auto">
+            <button onClick={() => setShowHelp(false)} className="absolute top-5 right-6 md:top-6 md:right-8 text-gray-300 hover:text-black transition-colors text-lg">✕</button>
+            <h2 className="text-3xl md:text-4xl serif italic mb-2">How It Works</h2>
+            <p className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest mb-8 md:mb-10">Buy & sell MarketPoints</p>
+            <div className="space-y-8">
+              <div className="flex gap-5 items-start">
+                <span className="w-10 h-10 md:w-12 md:h-12 bg-red-50 text-[#A51417] rounded-full flex items-center justify-center text-base md:text-lg font-bold shrink-0">1</span>
                 <div>
-                  <p className="text-sm font-bold text-gray-800">Set up your profile</p>
-                  <p className="text-xs text-gray-400 mt-1">Tap the profile icon and add your name and contact info (email or phone) so buyers can reach you.</p>
+                  <p className="text-base md:text-lg font-bold text-gray-800">Browse</p>
+                  <p className="text-sm md:text-base text-gray-400 mt-1 leading-relaxed">Check out listings on the marketplace — no sign-in needed.</p>
                 </div>
               </div>
-
-              <div className="flex gap-4 items-start">
-                <span className="w-8 h-8 bg-red-50 text-[#A51417] rounded-full flex items-center justify-center text-sm font-bold shrink-0">2</span>
+              <div className="flex gap-5 items-start">
+                <span className="w-10 h-10 md:w-12 md:h-12 bg-red-50 text-[#A51417] rounded-full flex items-center justify-center text-base md:text-lg font-bold shrink-0">2</span>
                 <div>
-                  <p className="text-sm font-bold text-gray-800">Selling points</p>
-                  <p className="text-xs text-gray-400 mt-1">Enter how many points you have (150–2,000) and your total asking price. Your listing goes live instantly.</p>
+                  <p className="text-base md:text-lg font-bold text-gray-800">Sell your points</p>
+                  <p className="text-sm md:text-base text-gray-400 mt-1 leading-relaxed">Sign in with your WashU Google account, fill in your name, contact info, how many points you have (100–500), and your total asking price. Your listing goes live instantly.</p>
                 </div>
               </div>
-
-              <div className="flex gap-4 items-start">
-                <span className="w-8 h-8 bg-red-50 text-[#A51417] rounded-full flex items-center justify-center text-sm font-bold shrink-0">3</span>
+              <div className="flex gap-5 items-start">
+                <span className="w-10 h-10 md:w-12 md:h-12 bg-red-50 text-[#A51417] rounded-full flex items-center justify-center text-base md:text-lg font-bold shrink-0">3</span>
                 <div>
-                  <p className="text-sm font-bold text-gray-800">Buying points</p>
-                  <p className="text-xs text-gray-400 mt-1">Browse the marketplace, tap "Contact" on a listing to see the seller's info, and reach out to arrange the swap.</p>
+                  <p className="text-base md:text-lg font-bold text-gray-800">Buy points</p>
+                  <p className="text-sm md:text-base text-gray-400 mt-1 leading-relaxed">Sign in and tap "Contact" on a listing to see the seller's email or phone, then reach out to arrange the swap.</p>
                 </div>
               </div>
-
-              <div className="flex gap-4 items-start">
-                <span className="w-8 h-8 bg-red-50 text-[#A51417] rounded-full flex items-center justify-center text-sm font-bold shrink-0">4</span>
+              <div className="flex gap-5 items-start">
+                <span className="w-10 h-10 md:w-12 md:h-12 bg-red-50 text-[#A51417] rounded-full flex items-center justify-center text-base md:text-lg font-bold shrink-0">4</span>
                 <div>
-                  <p className="text-sm font-bold text-gray-800">After you sell</p>
-                  <p className="text-xs text-gray-400 mt-1">Tap "Mark as Sold" on your listing to remove it from the marketplace.</p>
+                  <p className="text-base md:text-lg font-bold text-gray-800">After you sell</p>
+                  <p className="text-sm md:text-base text-gray-400 mt-1 leading-relaxed">Tap "Mark as Sold" on your listing to remove it from the marketplace.</p>
                 </div>
               </div>
             </div>
-
-            <button onClick={() => setShowHelp(false)} className="w-full mt-8 py-4 bg-[#A51417] text-white text-[10px] font-bold uppercase tracking-widest rounded-full shadow-lg shadow-red-50 hover:bg-black transition-all ripple">Got it</button>
+            <button onClick={() => setShowHelp(false)} className="w-full mt-10 py-4 md:py-5 bg-[#A51417] text-white text-xs md:text-sm font-bold uppercase tracking-widest rounded-full shadow-lg shadow-red-50 hover:bg-black transition-all ripple">Got it</button>
           </div>
         </div>
       )}
 
-      {/* MAIN CONTENT */}
-      <div className="max-w-7xl mx-auto px-6 md:px-12 pt-30 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
+      <div className="max-w-7xl mx-auto px-6 md:px-12 pt-30 pb-32 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 flex-1">
 
-        {/* SELL SIDEBAR */}
         <aside className="lg:col-span-4">
           <section className="glass p-10 rounded-[3rem] premium-shadow sticky top-40">
             <h2 className="text-2xl serif italic mb-8 text-gray-800">List Your Points</h2>
-            <form onSubmit={handleSubmit} className="space-y-8">
-              <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block ml-1">Quantity</label>
-                <input type="number" placeholder="500" className="w-full bg-white/50 border border-gray-100 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-red-50 transition-all font-sans text-lg" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+            {!user ? (
+              <div className="text-center py-8">
+                <p className="text-sm text-gray-400 mb-6">Sign in to list your points</p>
+                <button onClick={() => setShowLogin(true)} className="px-8 py-4 bg-[#A51417] text-white text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-black transition-all ripple">Sign in to sell</button>
               </div>
-              <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block ml-1">Total price</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 serif">$</span>
-                  <input type="number" step="0.01" placeholder="350" className="w-full bg-white/50 border border-gray-100 rounded-2xl p-4 pl-8 outline-none focus:ring-2 focus:ring-red-50 transition-all font-sans text-lg" value={price} onChange={(e) => setPrice(e.target.value)} required />
-                </div>
+            ) : formCollapsed ? (
+              <div className="text-center py-8">
+                <span className="success-check text-3xl">&#10003;</span>
+                <p className="text-[10px] font-bold uppercase text-[#A51417] mt-3 mb-6">Listed successfully!</p>
+                <button onClick={() => { setFormCollapsed(false); setListingMsg(''); }} className="text-[10px] font-bold text-gray-400 hover:text-[#A51417] uppercase tracking-widest border-b border-gray-200 pb-1 transition-all">Post another?</button>
               </div>
-              {perPointPreview && (
-                <p className="text-center text-xs text-[#A51417] font-semibold tracking-wide -mt-4">
-                  Price per point: <span className="serif italic">${perPointPreview}</span>
-                </p>
-              )}
-              <button type="submit" disabled={posting} className="w-full py-5 bg-[#A51417] text-white font-bold rounded-full hover:bg-black transition-all uppercase tracking-widest text-[10px] shadow-xl shadow-red-100/50 disabled:opacity-50 ripple">{posting ? 'Posting...' : 'Post Offer'}</button>
-              {listingSuccess ? (
-                <div className="text-center">
-                  <span className="success-check text-2xl">&#10003;</span>
-                  <span className="success-confetti ml-2 text-sm">&#127881;&#127881;&#127881;</span>
-                  <p className="text-[10px] font-bold uppercase text-[#A51417] mt-1">{listingMsg}</p>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block ml-1">Your name</label>
+                  <div className="flex gap-2">
+                    <input placeholder="First" className="w-1/2 bg-white/50 border border-gray-100 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-red-50 transition-all font-sans" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+                    <input placeholder="Last" className="w-1/2 bg-white/50 border border-gray-100 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-red-50 transition-all font-sans" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                  </div>
                 </div>
-              ) : (
-                listingMsg && <p className="text-center text-[10px] font-bold uppercase text-[#A51417] mt-2">{listingMsg}</p>
-              )}
-            </form>
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block ml-1">Contact info</label>
+                  <input placeholder="Email or phone number" className="w-full bg-white/50 border border-gray-100 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-red-50 transition-all font-sans" value={contactInfo} onChange={(e) => setContactInfo(e.target.value)} required />
+                  <p className="text-[8px] text-gray-300 mt-1 ml-1">Shown to buyers so they can reach you</p>
+                </div>
+                <div className="border-t border-gray-100 pt-6">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block ml-1">Quantity</label>
+                  <input type="number" min="100" max="500" placeholder="500" className="w-full bg-white/50 border border-gray-100 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-red-50 transition-all font-sans text-lg" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block ml-1">Total price</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 serif">$</span>
+                    <input type="number" step="0.01" min="0.01" placeholder="350" className="w-full bg-white/50 border border-gray-100 rounded-2xl p-4 pl-8 outline-none focus:ring-2 focus:ring-red-50 transition-all font-sans text-lg" value={price} onChange={(e) => setPrice(e.target.value)} required />
+                  </div>
+                </div>
+                {perPointPreview && (
+                  <p className="text-center text-xs text-[#A51417] font-semibold tracking-wide -mt-4">
+                    Price per point: <span className="serif italic">${perPointPreview}</span>
+                  </p>
+                )}
+                <button type="submit" disabled={posting || !formReady} className="w-full py-5 bg-[#A51417] text-white font-bold rounded-full hover:bg-black transition-all uppercase tracking-widest text-[10px] shadow-xl shadow-red-100/50 disabled:opacity-40 disabled:hover:bg-[#A51417] ripple">{posting ? 'Posting...' : 'Post Offer'}</button>
+                {listingMsg && <p className="text-center text-[10px] font-bold uppercase text-[#A51417] mt-2">{listingMsg}</p>}
+              </form>
+            )}
           </section>
         </aside>
 
-        {/* MARKET GRID */}
         <section className="lg:col-span-8">
           <header className="flex justify-between items-end mb-12">
             <div>
               <h2 className="text-6xl serif italic text-gray-900 tracking-tighter">Marketplace</h2>
               <div className="flex items-center gap-3 mt-3">
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.3em]">Live Listings</p>
+                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.3em]">{offers.length} {offers.length === 1 ? 'Listing' : 'Listings'} Live</p>
               </div>
             </div>
-            <button onClick={fetchOffers} className="text-[10px] font-bold text-gray-400 hover:text-[#A51417] uppercase tracking-widest border-b border-gray-200 pb-1 transition-all">Refresh</button>
+            <button onClick={fetchOffers} disabled={loadingOffers} className="text-[10px] font-bold text-gray-400 hover:text-[#A51417] uppercase tracking-widest border-b border-gray-200 pb-1 transition-all flex items-center gap-2 disabled:opacity-50">
+              <svg className={`w-3 h-3 ${loadingOffers ? 'animate-spin' : ''}`} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 8a7 7 0 0 1 13.4-2.8M15 8a7 7 0 0 1-13.4 2.8"/><path d="M14.4 1v4h-4M1.6 15v-4h4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              Refresh
+            </button>
           </header>
 
-          {/* FILTER & SORT PILLS */}
           <div className="flex flex-wrap gap-2 mb-8">
-            <button onClick={() => { setShowMine(!showMine); setSortKey(k => k + 1); }} className={`px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${showMine ? 'bg-gray-900 text-white shadow-lg' : 'glass text-gray-400 hover:text-gray-900 border border-white/60'}`}>
-              My Listings
-            </button>
-            <span className="w-px bg-gray-200 mx-1 self-stretch"></span>
+            {user && (
+              <>
+                <button onClick={() => { setShowMine(true); setSortKey(k => k + 1); }} className={`px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${showMine ? 'bg-gray-900 text-white shadow-lg' : 'glass text-gray-400 hover:text-gray-900 border border-white/60'}`}>
+                  My Listings
+                </button>
+                <span className="w-px bg-gray-200 mx-1 self-stretch"></span>
+              </>
+            )}
             {[
               { key: 'newest', label: 'Newest' },
               { key: 'oldest', label: 'Oldest' },
@@ -417,13 +443,13 @@ export default function Home() {
               { key: 'price-low', label: 'Price: Low' },
               { key: 'price-high', label: 'Price: High' },
             ].map(({ key, label }) => (
-              <button key={key} onClick={() => { setSortBy(key); setSortKey(k => k + 1); }} className={`px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${sortBy === key ? 'bg-[#A51417] text-white shadow-lg shadow-red-100/50' : 'glass text-gray-400 hover:text-[#A51417] hover:border-[#A51417]/20 border border-white/60'}`}>
+              <button key={key} onClick={() => { setSortBy(key); setShowMine(false); setSortKey(k => k + 1); }} className={`px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${sortBy === key && !showMine ? 'bg-[#A51417] text-white shadow-lg shadow-red-100/50' : 'glass text-gray-400 hover:text-[#A51417] hover:border-[#A51417]/20 border border-white/60'}`}>
                 {label}
               </button>
             ))}
           </div>
 
-          <div key={sortKey} className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          <div key={sortKey} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
             {loadingOffers ? (
               <>
                 <SkeletonCard />
@@ -436,46 +462,67 @@ export default function Home() {
                 <button onClick={fetchOffers} className="px-6 py-2 bg-[#A51417] text-white text-[9px] font-black uppercase tracking-widest rounded-full hover:bg-black transition-all ripple">Try Again</button>
               </div>
             ) : sortedOffers.length === 0 ? (
-              <div className="col-span-full py-32 text-center glass rounded-[3rem]">
-                <p className="serif italic text-gray-300 text-xl">{showMine ? "You haven't listed anything yet." : "Market is empty..."}</p>
+              <div className="col-span-full py-32 text-center glass rounded-[3rem] flex flex-col items-center justify-center">
+                <svg width="80" height="80" viewBox="0 0 100 100" className="mb-6 opacity-20">
+                  <circle cx="50" cy="52" r="30" fill="#A51417" />
+                  <circle cx="30" cy="30" r="14" fill="#A51417" />
+                  <circle cx="70" cy="30" r="14" fill="#A51417" />
+                  <circle cx="30" cy="30" r="8" fill="#fdfbf9" />
+                  <circle cx="70" cy="30" r="8" fill="#fdfbf9" />
+                  <circle cx="42" cy="46" r="4" fill="#fdfbf9" />
+                  <circle cx="58" cy="46" r="4" fill="#fdfbf9" />
+                  <ellipse cx="50" cy="56" rx="5" ry="3.5" fill="#fdfbf9" />
+                </svg>
+                <p className="serif italic text-gray-300 text-xl">{showMine ? "You haven't listed anything yet." : "No listings yet — be the first!"}</p>
               </div>
             ) : (
               sortedOffers.map((offer, index) => (
-                <div key={offer.id} className={`card-enter glass p-6 md:p-8 rounded-[2.5rem] premium-shadow card-hover flex flex-col justify-between ${offer.id === bestValueId ? 'border border-[#A51417]/20' : 'border border-white/60'}`} style={{ animationDelay: `${index * 80}ms` }}>
-                  <div className="text-center">
-                    {offer.id === bestValueId && (
-                      <span className="inline-block bg-red-50 text-[#A51417] text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-3 float-badge">Best Value</span>
-                    )}
-                    <p className="text-[8px] font-black text-gray-300 uppercase tracking-[0.2em] mb-4">Available Points</p>
-                    <h3 className="text-5xl md:text-6xl font-bold tracking-tighter text-[#A51417] point-glow leading-none mb-2">{offer.amount}</h3>
-                    <p className="text-[10px] serif italic text-gray-400">points</p>
-                  </div>
+                <div key={offer.id} className={`card-enter card-flip-container ${offer.id === bestValueId ? '' : ''}`} style={{ animationDelay: `${index * 80}ms` }}>
+                  <div className={`card-flip-inner ${revealedContact === offer.id ? 'flipped' : ''}`}>
+                    {/* FRONT */}
+                    <div className={`card-front glass p-4 md:p-5 rounded-2xl premium-shadow card-hover flex flex-col justify-between ${offer.id === bestValueId ? 'border border-[#A51417]/20' : 'border border-white/60'}`}>
+                      <div className="text-center">
+                        <div className="h-5 mb-1">
+                          {offer.id === bestValueId && (
+                            <span className="inline-block bg-red-50 text-[#A51417] text-[7px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full float-badge">Best Value</span>
+                          )}
+                        </div>
+                        <h3 className="text-4xl md:text-5xl font-bold tracking-tighter text-[#A51417] point-glow leading-none">{offer.amount}</h3>
+                        <p className="text-[15px] serif italic text-gray-400">points</p>
+                      </div>
 
-                  <div className="mt-8 pt-6 border-t border-gray-100/50 text-center">
-                    <div className="mb-4">
-                      <p className="text-[8px] font-black text-gray-300 uppercase tracking-widest mb-1">Total asking</p>
-                      <p className="text-2xl serif text-gray-800 italic font-light">${(offer.amount * offer.price_per_point).toFixed(2)}</p>
-                      <p className="text-[9px] text-gray-400 mt-1">${offer.price_per_point.toFixed(2)} <span className="text-gray-300">/ pt</span></p>
+                      <div className="mt-3 pt-3 border-t border-gray-100/50 text-center">
+                        <p className="text-2xl serif text-gray-800 italic font-light">${(offer.amount * offer.price_per_point).toFixed(2)}</p>
+                        <p className="text-[16px] text-gray-400">${offer.price_per_point.toFixed(2)} <span className="text-gray-300">/ pt</span></p>
+
+                        <div className="mt-3">
+                        {user && user.id === offer.seller_id ? (
+                          <button onClick={() => handleDelete(offer.id)} disabled={deleting === offer.id} className="w-full py-2.5 bg-red-50 text-[#A51417] text-[9px] font-black rounded-full hover:bg-red-100 uppercase tracking-widest transition-all disabled:opacity-50 ripple">{deleting === offer.id ? 'Removing...' : 'Mark as Sold'}</button>
+                        ) : (
+                          <button onClick={() => handleContactClick(offer.id)} className="w-full py-2.5 bg-gray-900 text-white text-[9px] font-black rounded-full hover:bg-[#A51417] uppercase tracking-widest text-center block transition-all ripple">Contact</button>
+                        )}
+                        </div>
+                        <div className="mt-2 text-center">
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest truncate">by {offer.profiles?.first_name || "A Bear"}</p>
+                          {offer.created_at && <p className="text-[10px] text-gray-400/60 uppercase tracking-wide">{timeAgo(offer.created_at)}</p>}
+                        </div>
+                      </div>
                     </div>
 
-                    {user.id === offer.seller_id ? (
-                      <button onClick={() => handleDelete(offer.id)} disabled={deleting === offer.id} className="w-full py-3 bg-red-50 text-[#A51417] text-[9px] font-black rounded-full hover:bg-red-100 uppercase tracking-widest transition-all disabled:opacity-50 ripple">{deleting === offer.id ? 'Removing...' : 'Mark as Sold'}</button>
-                    ) : (
-                      offer.profiles?.contact_info ? (
-                        revealedContact === offer.id ? (
-                          getContactHref(offer.profiles.contact_info) ? (
-                            <a href={getContactHref(offer.profiles.contact_info)} className="contact-reveal w-full py-3 bg-gray-900 text-white text-[9px] font-black rounded-full uppercase tracking-widest text-center block hover:bg-[#A51417] transition-all">{offer.profiles.contact_info}</a>
-                          ) : (
-                            <span className="contact-reveal w-full py-3 bg-gray-900 text-white text-[9px] font-black rounded-full uppercase tracking-widest text-center block">{offer.profiles.contact_info}</span>
-                          )
+                    {/* BACK */}
+                    <div className={`card-back glass p-4 md:p-5 rounded-2xl premium-shadow flex flex-col items-center justify-center text-center ${offer.id === bestValueId ? 'border border-[#A51417]/20' : 'border border-white/60'}`}>
+                      <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-3">Contact {offer.profiles?.first_name || "Seller"}</p>
+                      {offer.profiles?.contact_info ? (
+                        getContactHref(offer.profiles.contact_info) ? (
+                          <a href={getContactHref(offer.profiles.contact_info)} className="text-base font-bold text-[#A51417] hover:underline break-all">{offer.profiles.contact_info}</a>
                         ) : (
-                          <button onClick={() => setRevealedContact(offer.id)} className="w-full py-3 bg-gray-900 text-white text-[9px] font-black rounded-full hover:bg-[#A51417] uppercase tracking-widest text-center block transition-all ripple">Contact</button>
+                          <p className="text-base font-bold text-gray-800 break-all">{offer.profiles.contact_info}</p>
                         )
                       ) : (
-                        <span className="w-full py-3 bg-gray-100 text-gray-400 text-[9px] font-black rounded-full uppercase tracking-widest text-center block">No contact</span>
-                      )
-                    )}
-                    <p className="mt-4 text-[8px] text-gray-300 font-bold uppercase tracking-widest truncate">by {offer.profiles?.first_name || "A Bear"}</p>
+                        <p className="text-sm text-gray-400">No contact info</p>
+                      )}
+                      <button onClick={() => setRevealedContact(null)} className="mt-4 w-full py-2 bg-gray-100 text-gray-500 text-[8px] font-black rounded-full hover:bg-gray-200 uppercase tracking-widest transition-all">Flip back</button>
+                    </div>
                   </div>
                 </div>
               ))
@@ -483,6 +530,11 @@ export default function Home() {
           </div>
         </section>
       </div>
+
+      <footer className="mt-auto py-6 glass border-t border-white/40 text-center">
+        <p className="text-xs text-gray-400 tracking-wide">Built by a student at WashU</p>
+        <p className="text-[10px] text-gray-300 tracking-wide mt-1">Pointswap © {new Date().getFullYear()}</p>
+      </footer>
     </main>
   );
 }
