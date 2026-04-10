@@ -118,6 +118,16 @@ export default function Home() {
     };
   };
 
+  const [showEmailLogin, setShowEmailLogin] = useState(false);
+
+  const handleGoogleLogin = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    });
+    if (error) setListingMsg(error.message);
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     const { error } = await supabase.auth.signInWithOtp({ email });
@@ -232,10 +242,18 @@ export default function Home() {
         <div className="max-w-md w-full glass p-12 rounded-[3rem] premium-shadow text-center">
           <h1 className="text-5xl font-light text-[#A51417] italic serif mb-4">Pointswap.</h1>
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.4em] mb-12">The Unofficial Marketplace</p>
-          <form onSubmit={handleLogin} className="space-y-6">
-            <input type="email" placeholder="WUSTL Email" className="w-full bg-white/50 border border-gray-100 rounded-2xl p-4 text-center outline-none focus:ring-2 focus:ring-red-100 transition-all" value={email} onChange={(e) => setEmail(e.target.value)} required />
-            <button className="w-full py-4 bg-[#A51417] text-white rounded-full font-bold uppercase tracking-widest text-xs shadow-xl shadow-red-100 hover:bg-black transition-all ripple">Request Magic Link</button>
-          </form>
+          <button onClick={handleGoogleLogin} className="w-full py-4 bg-white border border-gray-200 rounded-full font-bold text-sm text-gray-700 shadow-md hover:shadow-lg hover:border-gray-300 transition-all flex items-center justify-center gap-3 ripple">
+            <svg width="18" height="18" viewBox="0 0 18 18"><path d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z" fill="#4285F4"/><path d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z" fill="#34A853"/><path d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z" fill="#FBBC05"/><path d="M8.98 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.59A8 8 0 0 0 1.83 5.4L4.5 7.49A4.77 4.77 0 0 1 8.98 3.58z" fill="#EA4335"/></svg>
+            Continue with Google
+          </button>
+          {!showEmailLogin ? (
+            <button onClick={() => setShowEmailLogin(true)} className="mt-6 text-[10px] font-bold text-gray-300 hover:text-gray-500 uppercase tracking-widest transition-all">Use email instead</button>
+          ) : (
+            <form onSubmit={handleLogin} className="space-y-4 mt-8 pt-8 border-t border-gray-100">
+              <input type="email" placeholder="WUSTL Email" className="w-full bg-white/50 border border-gray-100 rounded-2xl p-4 text-center outline-none focus:ring-2 focus:ring-red-100 transition-all" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <button className="w-full py-4 bg-[#A51417] text-white rounded-full font-bold uppercase tracking-widest text-xs shadow-xl shadow-red-100 hover:bg-black transition-all ripple">Send Magic Link</button>
+            </form>
+          )}
           {listingMsg && <p className="mt-8 text-[10px] text-gray-400 uppercase italic">{listingMsg}</p>}
         </div>
       </div>
