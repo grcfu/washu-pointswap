@@ -275,11 +275,11 @@ export default function Home() {
             <span className="text-[8px] font-bold text-gray-400 uppercase tracking-[0.3em] mt-1 ml-1">Washington University in St. Louis</span>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => setShowHelp(true)} className="w-10 h-10 glass rounded-full flex items-center justify-center premium-shadow hover:scale-110 transition-all text-gray-400 text-sm font-bold">?</button>
+            <button onClick={() => setShowHelp(true)} className="px-5 py-2 bg-[#A51417] text-white text-[9px] font-black uppercase tracking-widest rounded-full hover:bg-black transition-all ripple">How it works</button>
             {user ? (
               <button onClick={() => setShowProfile(true)} className="w-10 h-10 glass rounded-full flex items-center justify-center premium-shadow hover:scale-110 transition-all ripple">👤</button>
             ) : (
-              <button onClick={() => setShowLogin(true)} className="px-5 py-2 bg-[#A51417] text-white text-[9px] font-black uppercase tracking-widest rounded-full hover:bg-black transition-all ripple">Sign in</button>
+              <button onClick={() => setShowLogin(true)} className="px-5 py-2 bg-gray-900 text-white text-[9px] font-black uppercase tracking-widest rounded-full hover:bg-[#A51417] transition-all ripple">Sign in</button>
             )}
           </div>
         </div>
