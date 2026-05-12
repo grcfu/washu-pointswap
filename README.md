@@ -1,7 +1,7 @@
 # WashU Pointswap
 **The unofficial, high-aesthetic marketplace for Washington University in St. Louis meal point swaps.**
 
-WashU Pointswap solves the "end-of-semester balance" problem by providing a secure, real-time platform for students to buy and sell meal points. Built by a Washington University BuCS student and CSE 2407 TA, this project focuses on clean architecture and a premium user experience.
+WashU Pointswap solves the "end-of-semester balance" problem by providing a secure, real-time platform for students to buy and sell meal points. This project focuses on clean architecture and a premium user experience.
 
 ## Features
 * **Google OAuth Integration:** Secure, one-tap login restricted to `@wustl.edu` email addresses via Supabase Auth.
