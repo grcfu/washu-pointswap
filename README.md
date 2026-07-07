@@ -3,6 +3,8 @@
 
 WashU Pointswap solves the "end-of-semester balance" problem by providing a secure, real-time platform for students to buy and sell meal points. This project focuses on clean architecture and a premium user experience.
 
+**🚀 Try it out: [Live Demo](https://washu-pointswap.vercel.app/)**
+
 ## Features
 * **Google OAuth Integration:** Secure, one-tap login restricted to `@wustl.edu` email addresses via Supabase Auth.
 * **Live Marketplace:** A real-time feed of active meal point offers with instant contact options and a sleek card-flip interface.
