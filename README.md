@@ -3,12 +3,12 @@
 
 WashU Pointswap solves the "end-of-semester balance" problem by providing a secure, real-time platform for students to buy and sell meal points. This project focuses on clean architecture and a premium user experience.
 
-**🚀 Try it out: [Live Demo](https://washu-pointswap.vercel.app/)** (Note: The live database is currently experiencing a temporary Supabase outage)
+**🚀 Try it out: [Live Demo](https://washu-pointswap.vercel.app/)**
 
 ## Features
-* **Google OAuth Integration:** Secure, one-tap login restricted to `@wustl.edu` email addresses via Supabase Auth.
+* **Google OAuth Integration:** One-tap login through Supabase Auth, gated to `@wustl.edu` accounts.
 * **Live Marketplace:** A real-time feed of active meal point offers with instant contact options and a sleek card-flip interface.
-* **Burn Rate Calculator:** Integrated optimizer logic that calculates daily spending goals based on remaining balances and the academic calendar.
+* **Sorting & Best Value:** Sort listings by price, quantity, or recency, with an automatic badge on the lowest price-per-point offer.
 * **Pinterest-Inspired UI:** A premium interface utilizing Glassmorphism and a sophisticated Geist Sans & Lora Serif font pairing.
 * **Dynamic Profiles:** User-managed contact info (GroupMe/Email) linked directly to marketplace listings.
 
@@ -19,19 +19,29 @@ WashU Pointswap solves the "end-of-semester balance" problem by providing a secu
 
 ## 🛠️ Tech Stack
 ### **Frontend**
-* **Framework:** [Next.js](https://nextjs.org/) (App Router)
-* **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+* **Framework:** [Next.js 16](https://nextjs.org/) (App Router) with React 19
+* **Styling:** [Tailwind CSS v4](https://tailwindcss.com/)
 * **Typography:** Geist Sans & Lora Serif
-* **Deployment:** [Vercel](https://vercel.com/)
 
 ### **Backend**
-* **Framework:** [FastAPI](https://fastapi.tiangolo.com/) (Python)
-* **Database:** [Supabase](https://supabase.com/) (PostgreSQL)
-* **Deployment:** [Railway](https://railway.app/)
+* **API:** Next.js Route Handlers deployed as serverless functions
+* **Auth & Database:** [Supabase](https://supabase.com/) (PostgreSQL + Auth)
+* **Deployment:** [Vercel](https://vercel.com/) — frontend and API ship as one project
 
 ## Architecture & Design Decisions
-This project prioritizes a decoupled architecture to balance performance with a high-end aesthetic.
 
-* **Relational Joins:** The marketplace feed utilizes PostgreSQL joins via Supabase to link `offers` with `profiles`, reducing API latency and ensuring data integrity.
-* **Type Safety:** The FastAPI backend enforces strict type checking (e.g., UUID validation) to ensure secure and valid data transactions.
-* **Responsive Grid:** A custom 12-column grid that seamlessly adapts from a high-density desktop view to a focused mobile experience.
+* **Same-Origin API:** The API originally ran as a standalone [FastAPI](https://fastapi.tiangolo.com/) service on Railway. It was consolidated into Next.js route handlers served from the same origin as the frontend, which removed cross-origin requests entirely and eliminated a second deployment that could fail independently of the app. The original Python implementation is preserved in `backend/` for reference.
+* **Server-Side Token Verification:** Writes never trust the client. Each request carries the user's Supabase access token as a bearer header, which is verified server-side before the database is touched. Deletes are additionally scoped by `seller_id`, so a seller can only remove their own listings.
+* **Relational Joins:** The marketplace feed uses a PostgreSQL join via Supabase to fetch `offers` alongside their `profiles` in a single round trip, rather than issuing a query per listing.
+* **Operational Resilience:** A `/api/health` endpoint reads from Postgres and returns `503` when the database is unreachable, so an external uptime monitor doubles as both an alerting hook and a keepalive for Supabase's free tier.
+* **Responsive Grid:** A card grid that adapts from a high-density four-column desktop view down to a focused two-column mobile experience.
+
+## Running Locally
+
+```bash
+cd frontend
+npm install
+npm run dev      # http://localhost:3000
+```
+
+Copy `frontend/.env.example` to `frontend/.env` and fill in your Supabase project URL and publishable key. Leave `NEXT_PUBLIC_API_URL` unset — the app defaults to its own same-origin `/api` routes.
