@@ -42,13 +42,26 @@ body {
   position: relative;
 }
 
-/* Background image with white wash */
+/*
+  Crumpled-paper texture, washed out over the cream background.
+
+  bg.jpg is a saturated RED paper photo. Rather than ship a second recolored
+  image, the brand color is laid over it and blended with `color`, which takes
+  hue and saturation from the top layer while keeping the luminosity -- the
+  crumple detail -- from the photo underneath. Net effect: green paper from a red
+  source, driven by the same token as everything else, so it follows any future
+  theme change for free.
+*/
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   z-index: -2;
-  background: url('/bg.jpg') center / cover no-repeat;
+  background-image: linear-gradient(var(--color-brand), var(--color-brand)), url('/bg.jpg');
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-blend-mode: color;
   opacity: 0.15;
   pointer-events: none;
 }
