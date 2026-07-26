@@ -162,6 +162,29 @@ export default function Home() {
     }
   });
 
+  /*
+    Value scale: tint each listing's price-per-point by how it compares to the
+    other listings currently on screen. Cheapest third reads strongest green,
+    priciest third stays neutral grey.
+
+    Two deliberate constraints:
+    - It is redundant, never the only signal. The number itself is always shown,
+      and the one actual claim ("Best Value") is a text badge, so nothing is
+      communicated by color alone.
+    - Below three listings there is no meaningful spread to compare, so the scale
+      switches off rather than implying a ranking that does not exist.
+  */
+  const visiblePrices = filteredOffers.map(o => o.price_per_point);
+  const cheapest = visiblePrices.length ? Math.min(...visiblePrices) : 0;
+  const priciest = visiblePrices.length ? Math.max(...visiblePrices) : 0;
+  const valueClass = (pricePerPoint) => {
+    if (filteredOffers.length < 3 || priciest === cheapest) return 'text-gray-400';
+    const position = (pricePerPoint - cheapest) / (priciest - cheapest);
+    if (position <= 1 / 3) return 'text-brand';
+    if (position <= 2 / 3) return 'text-brand/60';
+    return 'text-gray-400';
+  };
+
   const getAuthHeaders = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     return {
@@ -502,7 +525,7 @@ export default function Home() {
 
                       <div className="mt-3 pt-3 border-t border-gray-100/50 text-center">
                         <p className="text-2xl serif text-gray-800 italic font-light">${(offer.amount * offer.price_per_point).toFixed(2)}</p>
-                        <p className="text-[16px] text-gray-400">${offer.price_per_point.toFixed(2)} <span className="text-gray-300">/ pt</span></p>
+                        <p className={`text-[16px] font-semibold ${valueClass(offer.price_per_point)}`}>${offer.price_per_point.toFixed(2)} <span className="text-gray-300 font-normal">/ pt</span></p>
 
                         <div className="mt-3">
                         {user && user.id === offer.seller_id ? (
