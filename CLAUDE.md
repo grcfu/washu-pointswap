@@ -51,11 +51,14 @@ Two Next.js 16 specifics to respect here:
 - Route handlers are **not cached by default**, which is what keeps listings live.
 - `supabase-js` returns no rows from `insert`/`delete` unless `.select()` is chained.
 
-### Optional standalone backend (`backend/main.py`)
+### Archived backend (`backend/`) — not used
 A FastAPI app that predates the migration and exposes the same endpoints without the
-`/api` prefix. It is **not deployed** — nothing in production depends on it. It is kept
-as a reference and for local work; if you change a business rule, either update both or
-delete this directory. Run it with `NEXT_PUBLIC_API_URL=http://localhost:8000`.
+`/api` prefix. It is **not deployed and not used**; the Railway service it ran on has been
+deleted. Kept purely as a reference — see `backend/README.md`.
+
+Do not change app behavior here; business rules live in `frontend/src/app/api/`. It has
+already drifted: it does **not** enforce the `@wustl.edu` restriction. Its committed
+`venv/` is also broken (built at an older path), so recreate it if you ever run this.
 
 ### Frontend (`frontend/src/`)
 - **Next.js 16** with React 19, Tailwind CSS v4, Supabase client

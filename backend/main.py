@@ -1,3 +1,26 @@
+"""
+ARCHIVED -- NOT DEPLOYED AND NO LONGER USED.
+
+This was the original standalone backend for WashU Pointswap, hosted on Railway.
+The live API is now Next.js route handlers in frontend/src/app/api/, running as
+serverless functions on the same origin as the frontend. Nothing in production
+calls this file, and the Railway service it ran on has been deleted.
+
+It is kept only as a reference for how the API looked as a separate Python
+service. Business rules must be changed in frontend/src/app/api/ -- edits here
+have NO effect on the live site.
+
+This file has already drifted from the live API. Do not treat it as equivalent:
+  - it does NOT enforce the @wustl.edu restriction on writes
+  - its routes have no /api prefix
+  - it needs CORS middleware, which the same-origin route handlers do not
+
+To run it anyway, from the backend/ directory:
+    python main.py    # reads ../.env for SUPABASE_URL and SUPABASE_KEY
+then start the frontend with NEXT_PUBLIC_API_URL=http://localhost:8000 so it
+talks to this instead of its own built-in /api routes.
+"""
+
 from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
