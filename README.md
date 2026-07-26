@@ -9,7 +9,7 @@ WashU Pointswap solves the "end-of-semester balance" problem by providing a secu
 * **Google OAuth Integration:** One-tap login through Supabase Auth, restricted to `@wustl.edu` accounts and enforced server-side on every write.
 * **Live Marketplace:** A real-time feed of active meal point offers with instant contact options and a sleek card-flip interface.
 * **Sorting & Best Value:** Sort listings by price, quantity, or recency, with an automatic badge on the lowest price-per-point offer.
-* **Pinterest-Inspired UI:** A premium interface utilizing Glassmorphism and a sophisticated Geist Sans & Lora Serif font pairing.
+* **Pinterest-Inspired UI:** A premium interface utilizing Glassmorphism and a sophisticated Geist Sans & Lora Serif font pairing, in WashU green with a full dark mode.
 * **Dynamic Profiles:** User-managed contact info (GroupMe/Email) linked directly to marketplace listings.
 
 ## 📸 Visuals
@@ -34,6 +34,7 @@ WashU Pointswap solves the "end-of-semester balance" problem by providing a secu
 * **Server-Side Token Verification:** Writes never trust the client. Each request carries the user's Supabase access token as a bearer header, which is verified server-side before the database is touched. Because Google OAuth will issue a session to *any* Google account, the `@wustl.edu` restriction is enforced at this layer rather than in the browser — the client-side check exists only to give non-WashU users a clear message. Deletes are additionally scoped by `seller_id`, so a seller can only remove their own listings.
 * **Relational Joins:** The marketplace feed uses a PostgreSQL join via Supabase to fetch `offers` alongside their `profiles` in a single round trip, rather than issuing a query per listing.
 * **Operational Resilience:** A `/api/health` endpoint reads from Postgres and returns `503` when the database is unreachable, so an external uptime monitor doubles as both an alerting hook and a keepalive for Supabase's free tier.
+* **Tokenised Theming:** All color resolves through a single `@theme` block, with brand identity, decorative accent, and error states as separate tokens. Switching the brand from WashU red to WashU green was a three-line change across ~53 call sites, and dark mode is one media query that reassigns tokens rather than a duplicated stylesheet. Contrast ratios were measured rather than eyeballed; the palette is AA or better in both themes.
 * **Responsive Grid:** A card grid that adapts from a high-density four-column desktop view down to a focused two-column mobile experience.
 
 ## Running Locally

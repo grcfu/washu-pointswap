@@ -93,9 +93,34 @@ See `.env.example` and `frontend/.env.example` for the full list. Neither `.env`
   dashboard does nothing until you redeploy.
 
 ### Design System
-- WashU red `#A51417`, cream background `#fdfbf9`
-- Glassmorphism style (backdrop blur, rounded corners, premium shadows)
+All color lives in the `@theme` block at the top of `globals.css`. **Never hardcode a
+color in a component** — add or use a token. Tailwind v4 generates real utilities from
+these (`bg-brand`, `text-ink-muted`, `border-line`).
+
+Roles, which are enforced by convention, not tooling:
+| Token | Role |
+|---|---|
+| `brand` | identity and **fills** — buttons, dots, the bear |
+| `brand-ink` | brand as **text**; diverges from `brand` in dark mode |
+| `accent` | decorative WashU red, used sparingly (the wordmark period) |
+| `danger` | destructive and error states **only** |
+| `ink*` / `line*` / `panel` / `field` / `edge` | text, borders, surfaces |
+
+- WashU green `#215732` leads; WashU red `#A51417` survives as `accent` and `danger`.
+  Both are official WashU colors. Green is used because red reads as "loss" in a
+  financial context.
+- Glassmorphism (backdrop blur, rounded corners, premium shadows)
 - Fonts: Geist Sans, Geist Mono, Lora (serif for headings)
+- `public/bg.jpg` is a **red** paper texture, recolored at runtime by blending
+  `--color-brand` over it with `background-blend-mode: color`. Don't "fix" the asset.
+
+Two gotchas worth knowing before editing:
+- **Opacity modifiers bake the hex.** `bg-white/90` compiles to `#ffffffe6`, not a live
+  `var()`, so a runtime override cannot reach it. That is why translucent surfaces are
+  tokens with the alpha folded in (`--color-panel: rgb(255 255 255 / 0.9)`).
+- **Dark mode** is one `@media (prefers-color-scheme: dark)` block that reassigns tokens.
+  There is no toggle and no `dark:` variants. Adding a hardcoded color breaks it silently.
+  Contrast was measured, not guessed — keep new pairs at AA or better.
 
 ### Business Rules
 Validated on both the client (`handleSubmit`) and the server (`create_offer`) — keep them in sync:
