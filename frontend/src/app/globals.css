@@ -1,8 +1,31 @@
 @import "tailwindcss";
 
+/*
+  Single source of truth for brand color. Registered with @theme so Tailwind
+  generates real utilities (bg-brand, text-brand, border-brand/20, ...) instead
+  of one-off arbitrary values. Changing --color-brand here restyles the entire
+  app; nothing should hardcode a brand hex again.
+
+  Roles are deliberate:
+    brand   -> identity, actions, value, success
+    danger  -> destructive and error states ONLY
+    warning -> warnings, used sparingly
+*/
+@theme {
+  --color-brand: #A51417;
+  --color-brand-tint: #fef2f2;  /* soft fills behind brand-colored text */
+  --color-brand-ring: #fee2e2;  /* focus rings */
+
+  --color-danger: #A51417;
+  --color-danger-tint: #fef2f2;
+
+  --color-cream: #fdfbf9;
+}
+
 :root {
-  --washu-red: #A51417;
-  --bg-cream: #fdfbf9;
+  /* rgb triplet of --color-brand, for rgb(... / alpha) in plain CSS below */
+  --brand-rgb: 165 20 23;
+  --bg-cream: var(--color-cream);
 }
 
 body {
@@ -58,12 +81,12 @@ body::after {
 
 .card-hover:hover {
   transform: translateY(-4px);
-  box-shadow: 0 20px 40px -12px rgba(165, 20, 23, 0.12);
-  border-color: rgba(165, 20, 23, 0.1);
+  box-shadow: 0 20px 40px -12px rgb(var(--brand-rgb) / 0.12);
+  border-color: rgb(var(--brand-rgb) / 0.1);
 }
 
 .point-glow {
-  text-shadow: 0 0 20px rgba(165, 20, 23, 0.05);
+  text-shadow: 0 0 20px rgb(var(--brand-rgb) / 0.05);
 }
 
 .no-scrollbar::-webkit-scrollbar {

@@ -270,7 +270,7 @@ export default function Home() {
     return (
       <div className="min-h-screen flex items-center justify-center px-6 page-transition">
         <div className="text-center">
-          <h1 className="text-5xl font-light text-[#A51417] italic serif mb-4">Pointswap.</h1>
+          <h1 className="text-5xl font-light text-brand italic serif mb-4">Pointswap.</h1>
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.4em] animate-pulse">Loading...</p>
         </div>
       </div>
@@ -282,15 +282,15 @@ export default function Home() {
       <nav className="fixed top-0 w-full z-50 glass border-b border-white/40 h-24 flex items-center justify-center">
         <div className="max-w-7xl w-full px-8 md:px-16 flex justify-between items-center">
           <div className="flex flex-col">
-            <h1 className="text-3xl font-light text-[#A51417] italic serif tracking-tight leading-none">Pointswap.</h1>
+            <h1 className="text-3xl font-light text-brand italic serif tracking-tight leading-none">Pointswap.</h1>
             <span className="text-[8px] font-bold text-gray-400 uppercase tracking-[0.3em] mt-1 ml-1">Washington University in St. Louis</span>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => setShowHelp(true)} className="px-5 py-2 bg-[#A51417] text-white text-[9px] font-black uppercase tracking-widest rounded-full hover:bg-black transition-all ripple">How it works</button>
+            <button onClick={() => setShowHelp(true)} className="px-5 py-2 bg-brand text-white text-[9px] font-black uppercase tracking-widest rounded-full hover:bg-black transition-all ripple">How it works</button>
             {user ? (
               <button onClick={() => setShowProfile(true)} className="w-10 h-10 glass rounded-full flex items-center justify-center premium-shadow hover:scale-110 transition-all ripple">👤</button>
             ) : (
-              <button onClick={() => setShowLogin(true)} className="px-5 py-2 bg-gray-900 text-white text-[9px] font-black uppercase tracking-widest rounded-full hover:bg-[#A51417] transition-all ripple">Sign in</button>
+              <button onClick={() => setShowLogin(true)} className="px-5 py-2 bg-gray-900 text-white text-[9px] font-black uppercase tracking-widest rounded-full hover:bg-brand transition-all ripple">Sign in</button>
             )}
           </div>
         </div>
@@ -301,13 +301,13 @@ export default function Home() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/10 backdrop-blur-md p-6">
           <div className="bg-white/90 max-w-md w-full p-12 rounded-[2.5rem] premium-shadow relative border border-white text-center">
             <button onClick={() => { setShowLogin(false); setLoginMsg(''); }} className="absolute top-6 right-8 text-gray-300 hover:text-black transition-colors">✕</button>
-            <h2 className="text-3xl font-light text-[#A51417] italic serif mb-2">Sign in</h2>
-            <p className="text-sm text-gray-500 font-semibold mb-8">Use your <span className="text-[#A51417] font-bold">@wustl.edu</span> Google account</p>
+            <h2 className="text-3xl font-light text-brand italic serif mb-2">Sign in</h2>
+            <p className="text-sm text-gray-500 font-semibold mb-8">Use your <span className="text-brand font-bold">@wustl.edu</span> Google account</p>
             <button onClick={handleGoogleLogin} className="w-full py-4 bg-white border border-gray-200 rounded-full font-bold text-sm text-gray-700 shadow-md hover:shadow-lg hover:border-gray-300 transition-all flex items-center justify-center gap-3 ripple">
               <svg width="18" height="18" viewBox="0 0 18 18"><path d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z" fill="#4285F4"/><path d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z" fill="#34A853"/><path d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z" fill="#FBBC05"/><path d="M8.98 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.59A8 8 0 0 0 1.83 5.4L4.5 7.49A4.77 4.77 0 0 1 8.98 3.58z" fill="#EA4335"/></svg>
               Continue with Google
             </button>
-            {loginMsg && <p className="mt-8 text-xs font-bold text-[#A51417] bg-red-50 px-4 py-3 rounded-2xl">{loginMsg}</p>}
+            {loginMsg && <p className="mt-8 text-xs font-bold text-brand bg-brand-tint px-4 py-3 rounded-2xl">{loginMsg}</p>}
           </div>
         </div>
       )}
@@ -319,7 +319,7 @@ export default function Home() {
             <button onClick={() => setShowProfile(false)} className="absolute top-6 right-8 text-gray-300 hover:text-black transition-colors">✕</button>
             <h2 className="text-2xl serif italic mb-2">Account</h2>
             <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-8">{user.email}</p>
-            <button onClick={() => { if (confirm('Sign out?')) { supabase.auth.signOut(); setShowProfile(false); } }} className="w-full py-4 bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-red-50 hover:text-[#A51417] transition-all">
+            <button onClick={() => { if (confirm('Sign out?')) { supabase.auth.signOut(); setShowProfile(false); } }} className="w-full py-4 bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-brand-tint hover:text-brand transition-all">
               Sign out
             </button>
           </div>
@@ -335,35 +335,35 @@ export default function Home() {
             <p className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest mb-8 md:mb-10">Buy & sell MarketPoints</p>
             <div className="space-y-8">
               <div className="flex gap-5 items-start">
-                <span className="w-10 h-10 md:w-12 md:h-12 bg-red-50 text-[#A51417] rounded-full flex items-center justify-center text-base md:text-lg font-bold shrink-0">1</span>
+                <span className="w-10 h-10 md:w-12 md:h-12 bg-brand-tint text-brand rounded-full flex items-center justify-center text-base md:text-lg font-bold shrink-0">1</span>
                 <div>
                   <p className="text-base md:text-lg font-bold text-gray-800">Browse</p>
                   <p className="text-sm md:text-base text-gray-400 mt-1 leading-relaxed">Check out listings on the marketplace — no sign-in needed.</p>
                 </div>
               </div>
               <div className="flex gap-5 items-start">
-                <span className="w-10 h-10 md:w-12 md:h-12 bg-red-50 text-[#A51417] rounded-full flex items-center justify-center text-base md:text-lg font-bold shrink-0">2</span>
+                <span className="w-10 h-10 md:w-12 md:h-12 bg-brand-tint text-brand rounded-full flex items-center justify-center text-base md:text-lg font-bold shrink-0">2</span>
                 <div>
                   <p className="text-base md:text-lg font-bold text-gray-800">Sell your points</p>
                   <p className="text-sm md:text-base text-gray-400 mt-1 leading-relaxed">Sign in with your WashU Google account, fill in your name, contact info, how many points you have (100–500), and your total asking price. Your listing goes live instantly.</p>
                 </div>
               </div>
               <div className="flex gap-5 items-start">
-                <span className="w-10 h-10 md:w-12 md:h-12 bg-red-50 text-[#A51417] rounded-full flex items-center justify-center text-base md:text-lg font-bold shrink-0">3</span>
+                <span className="w-10 h-10 md:w-12 md:h-12 bg-brand-tint text-brand rounded-full flex items-center justify-center text-base md:text-lg font-bold shrink-0">3</span>
                 <div>
                   <p className="text-base md:text-lg font-bold text-gray-800">Buy points</p>
                   <p className="text-sm md:text-base text-gray-400 mt-1 leading-relaxed">Sign in and tap "Contact" on a listing to see the seller's email or phone, then reach out to arrange the swap.</p>
                 </div>
               </div>
               <div className="flex gap-5 items-start">
-                <span className="w-10 h-10 md:w-12 md:h-12 bg-red-50 text-[#A51417] rounded-full flex items-center justify-center text-base md:text-lg font-bold shrink-0">4</span>
+                <span className="w-10 h-10 md:w-12 md:h-12 bg-brand-tint text-brand rounded-full flex items-center justify-center text-base md:text-lg font-bold shrink-0">4</span>
                 <div>
                   <p className="text-base md:text-lg font-bold text-gray-800">After you sell</p>
                   <p className="text-sm md:text-base text-gray-400 mt-1 leading-relaxed">Tap "Mark as Sold" on your listing to remove it from the marketplace.</p>
                 </div>
               </div>
             </div>
-            <button onClick={() => setShowHelp(false)} className="w-full mt-10 py-4 md:py-5 bg-[#A51417] text-white text-xs md:text-sm font-bold uppercase tracking-widest rounded-full shadow-lg shadow-red-50 hover:bg-black transition-all ripple">Got it</button>
+            <button onClick={() => setShowHelp(false)} className="w-full mt-10 py-4 md:py-5 bg-brand text-white text-xs md:text-sm font-bold uppercase tracking-widest rounded-full shadow-lg shadow-brand-tint hover:bg-black transition-all ripple">Got it</button>
           </div>
         </div>
       )}
@@ -376,46 +376,46 @@ export default function Home() {
             {!user ? (
               <div className="text-center py-8">
                 <p className="text-sm text-gray-400 mb-6">Sign in to list your points</p>
-                <button onClick={() => setShowLogin(true)} className="px-8 py-4 bg-[#A51417] text-white text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-black transition-all ripple">Sign in to sell</button>
+                <button onClick={() => setShowLogin(true)} className="px-8 py-4 bg-brand text-white text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-black transition-all ripple">Sign in to sell</button>
               </div>
             ) : formCollapsed ? (
               <div className="text-center py-8">
                 <span className="success-check text-3xl">&#10003;</span>
-                <p className="text-[10px] font-bold uppercase text-[#A51417] mt-3 mb-6">Listed successfully!</p>
-                <button onClick={() => { setFormCollapsed(false); setListingMsg(''); }} className="text-[10px] font-bold text-gray-400 hover:text-[#A51417] uppercase tracking-widest border-b border-gray-200 pb-1 transition-all">Post another?</button>
+                <p className="text-[10px] font-bold uppercase text-brand mt-3 mb-6">Listed successfully!</p>
+                <button onClick={() => { setFormCollapsed(false); setListingMsg(''); }} className="text-[10px] font-bold text-gray-400 hover:text-brand uppercase tracking-widest border-b border-gray-200 pb-1 transition-all">Post another?</button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block ml-1">Your name</label>
                   <div className="flex gap-2">
-                    <input placeholder="First" className="w-1/2 bg-white/50 border border-gray-100 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-red-50 transition-all font-sans" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
-                    <input placeholder="Last" className="w-1/2 bg-white/50 border border-gray-100 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-red-50 transition-all font-sans" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                    <input placeholder="First" className="w-1/2 bg-white/50 border border-gray-100 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand-ring transition-all font-sans" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+                    <input placeholder="Last" className="w-1/2 bg-white/50 border border-gray-100 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand-ring transition-all font-sans" value={lastName} onChange={(e) => setLastName(e.target.value)} />
                   </div>
                 </div>
                 <div>
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block ml-1">Contact info</label>
-                  <input placeholder="Email or phone number" className="w-full bg-white/50 border border-gray-100 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-red-50 transition-all font-sans" value={contactInfo} onChange={(e) => setContactInfo(e.target.value)} required />
+                  <input placeholder="Email or phone number" className="w-full bg-white/50 border border-gray-100 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand-ring transition-all font-sans" value={contactInfo} onChange={(e) => setContactInfo(e.target.value)} required />
                   <p className="text-[8px] text-gray-300 mt-1 ml-1">Shown to buyers so they can reach you</p>
                 </div>
                 <div className="border-t border-gray-100 pt-6">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block ml-1">Quantity</label>
-                  <input type="number" min="100" max="500" placeholder="500" className="w-full bg-white/50 border border-gray-100 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-red-50 transition-all font-sans text-lg" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+                  <input type="number" min="100" max="500" placeholder="500" className="w-full bg-white/50 border border-gray-100 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand-ring transition-all font-sans text-lg" value={amount} onChange={(e) => setAmount(e.target.value)} required />
                 </div>
                 <div>
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block ml-1">Total price</label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 serif">$</span>
-                    <input type="number" step="0.01" min="0.01" placeholder="350" className="w-full bg-white/50 border border-gray-100 rounded-2xl p-4 pl-8 outline-none focus:ring-2 focus:ring-red-50 transition-all font-sans text-lg" value={price} onChange={(e) => setPrice(e.target.value)} required />
+                    <input type="number" step="0.01" min="0.01" placeholder="350" className="w-full bg-white/50 border border-gray-100 rounded-2xl p-4 pl-8 outline-none focus:ring-2 focus:ring-brand-ring transition-all font-sans text-lg" value={price} onChange={(e) => setPrice(e.target.value)} required />
                   </div>
                 </div>
                 {perPointPreview && (
-                  <p className="text-center text-xs text-[#A51417] font-semibold tracking-wide -mt-4">
+                  <p className="text-center text-xs text-brand font-semibold tracking-wide -mt-4">
                     Price per point: <span className="serif italic">${perPointPreview}</span>
                   </p>
                 )}
-                <button type="submit" disabled={posting || !formReady} className="w-full py-5 bg-[#A51417] text-white font-bold rounded-full hover:bg-black transition-all uppercase tracking-widest text-[10px] shadow-xl shadow-red-100/50 disabled:opacity-40 disabled:hover:bg-[#A51417] ripple">{posting ? 'Posting...' : 'Post Offer'}</button>
-                {listingMsg && <p className="text-center text-[10px] font-bold uppercase text-[#A51417] mt-2">{listingMsg}</p>}
+                <button type="submit" disabled={posting || !formReady} className="w-full py-5 bg-brand text-white font-bold rounded-full hover:bg-black transition-all uppercase tracking-widest text-[10px] shadow-xl shadow-brand-tint/50 disabled:opacity-40 disabled:hover:bg-brand ripple">{posting ? 'Posting...' : 'Post Offer'}</button>
+                {listingMsg && <p className="text-center text-[10px] font-bold uppercase text-brand mt-2">{listingMsg}</p>}
               </form>
             )}
           </section>
@@ -430,7 +430,7 @@ export default function Home() {
                 <p className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.3em]">{offers.length} {offers.length === 1 ? 'Listing' : 'Listings'} Live</p>
               </div>
             </div>
-            <button onClick={fetchOffers} disabled={loadingOffers} className="text-[10px] font-bold text-gray-400 hover:text-[#A51417] uppercase tracking-widest border-b border-gray-200 pb-1 transition-all flex items-center gap-2 disabled:opacity-50">
+            <button onClick={fetchOffers} disabled={loadingOffers} className="text-[10px] font-bold text-gray-400 hover:text-brand uppercase tracking-widest border-b border-gray-200 pb-1 transition-all flex items-center gap-2 disabled:opacity-50">
               <svg className={`w-3 h-3 ${loadingOffers ? 'animate-spin' : ''}`} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 8a7 7 0 0 1 13.4-2.8M15 8a7 7 0 0 1-13.4 2.8"/><path d="M14.4 1v4h-4M1.6 15v-4h4" strokeLinecap="round" strokeLinejoin="round"/></svg>
               Refresh
             </button>
@@ -454,7 +454,7 @@ export default function Home() {
               { key: 'price-low', label: 'Price: Low' },
               { key: 'price-high', label: 'Price: High' },
             ].map(({ key, label }) => (
-              <button key={key} onClick={() => { setSortBy(key); setShowMine(false); setSortKey(k => k + 1); }} className={`px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${sortBy === key && !showMine ? 'bg-[#A51417] text-white shadow-lg shadow-red-100/50' : 'glass text-gray-400 hover:text-[#A51417] hover:border-[#A51417]/20 border border-white/60'}`}>
+              <button key={key} onClick={() => { setSortBy(key); setShowMine(false); setSortKey(k => k + 1); }} className={`px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${sortBy === key && !showMine ? 'bg-brand text-white shadow-lg shadow-brand-tint/50' : 'glass text-gray-400 hover:text-brand hover:border-brand/20 border border-white/60'}`}>
                 {label}
               </button>
             ))}
@@ -469,20 +469,20 @@ export default function Home() {
               </>
             ) : fetchError ? (
               <div className="col-span-full py-32 text-center glass rounded-[3rem]">
-                <p className="serif italic text-[#A51417] text-xl mb-4">{fetchError}</p>
-                <button onClick={fetchOffers} className="px-6 py-2 bg-[#A51417] text-white text-[9px] font-black uppercase tracking-widest rounded-full hover:bg-black transition-all ripple">Try Again</button>
+                <p className="serif italic text-brand text-xl mb-4">{fetchError}</p>
+                <button onClick={fetchOffers} className="px-6 py-2 bg-brand text-white text-[9px] font-black uppercase tracking-widest rounded-full hover:bg-black transition-all ripple">Try Again</button>
               </div>
             ) : sortedOffers.length === 0 ? (
               <div className="col-span-full py-32 text-center glass rounded-[3rem] flex flex-col items-center justify-center">
                 <svg width="80" height="80" viewBox="0 0 100 100" className="mb-6 opacity-20">
-                  <circle cx="50" cy="52" r="30" fill="#A51417" />
-                  <circle cx="30" cy="30" r="14" fill="#A51417" />
-                  <circle cx="70" cy="30" r="14" fill="#A51417" />
-                  <circle cx="30" cy="30" r="8" fill="#fdfbf9" />
-                  <circle cx="70" cy="30" r="8" fill="#fdfbf9" />
-                  <circle cx="42" cy="46" r="4" fill="#fdfbf9" />
-                  <circle cx="58" cy="46" r="4" fill="#fdfbf9" />
-                  <ellipse cx="50" cy="56" rx="5" ry="3.5" fill="#fdfbf9" />
+                  <circle cx="50" cy="52" r="30" fill="var(--color-brand)" />
+                  <circle cx="30" cy="30" r="14" fill="var(--color-brand)" />
+                  <circle cx="70" cy="30" r="14" fill="var(--color-brand)" />
+                  <circle cx="30" cy="30" r="8" fill="var(--color-cream)" />
+                  <circle cx="70" cy="30" r="8" fill="var(--color-cream)" />
+                  <circle cx="42" cy="46" r="4" fill="var(--color-cream)" />
+                  <circle cx="58" cy="46" r="4" fill="var(--color-cream)" />
+                  <ellipse cx="50" cy="56" rx="5" ry="3.5" fill="var(--color-cream)" />
                 </svg>
                 <p className="serif italic text-gray-300 text-xl">{showMine ? "You haven't listed anything yet." : "No listings yet — be the first!"}</p>
               </div>
@@ -491,14 +491,14 @@ export default function Home() {
                 <div key={offer.id} className={`card-enter card-flip-container ${offer.id === bestValueId ? '' : ''}`} style={{ animationDelay: `${index * 80}ms` }}>
                   <div className={`card-flip-inner ${revealedContact === offer.id ? 'flipped' : ''}`}>
                     {/* FRONT */}
-                    <div className={`card-front glass p-4 md:p-5 rounded-2xl premium-shadow card-hover flex flex-col justify-between ${offer.id === bestValueId ? 'border border-[#A51417]/20' : 'border border-white/60'}`}>
+                    <div className={`card-front glass p-4 md:p-5 rounded-2xl premium-shadow card-hover flex flex-col justify-between ${offer.id === bestValueId ? 'border border-brand/20' : 'border border-white/60'}`}>
                       <div className="text-center">
                         <div className="h-5 mb-1">
                           {offer.id === bestValueId && (
-                            <span className="inline-block bg-red-50 text-[#A51417] text-[7px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full float-badge">Best Value</span>
+                            <span className="inline-block bg-brand-tint text-brand text-[7px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full float-badge">Best Value</span>
                           )}
                         </div>
-                        <h3 className="text-4xl md:text-5xl font-bold tracking-tighter text-[#A51417] point-glow leading-none">{offer.amount}</h3>
+                        <h3 className="text-4xl md:text-5xl font-bold tracking-tighter text-brand point-glow leading-none">{offer.amount}</h3>
                         <p className="text-[15px] serif italic text-gray-400">points</p>
                       </div>
 
@@ -508,9 +508,9 @@ export default function Home() {
 
                         <div className="mt-3">
                         {user && user.id === offer.seller_id ? (
-                          <button onClick={() => handleDelete(offer.id)} disabled={deleting === offer.id} className="w-full py-2.5 bg-red-50 text-[#A51417] text-[9px] font-black rounded-full hover:bg-red-100 uppercase tracking-widest transition-all disabled:opacity-50 ripple">{deleting === offer.id ? 'Removing...' : 'Mark as Sold'}</button>
+                          <button onClick={() => handleDelete(offer.id)} disabled={deleting === offer.id} className="w-full py-2.5 bg-brand-tint text-brand text-[9px] font-black rounded-full hover:bg-brand-ring uppercase tracking-widest transition-all disabled:opacity-50 ripple">{deleting === offer.id ? 'Removing...' : 'Mark as Sold'}</button>
                         ) : (
-                          <button onClick={() => handleContactClick(offer.id)} className="w-full py-2.5 bg-gray-900 text-white text-[9px] font-black rounded-full hover:bg-[#A51417] uppercase tracking-widest text-center block transition-all ripple">Contact</button>
+                          <button onClick={() => handleContactClick(offer.id)} className="w-full py-2.5 bg-gray-900 text-white text-[9px] font-black rounded-full hover:bg-brand uppercase tracking-widest text-center block transition-all ripple">Contact</button>
                         )}
                         </div>
                         <div className="mt-2 text-center">
@@ -521,11 +521,11 @@ export default function Home() {
                     </div>
 
                     {/* BACK */}
-                    <div className={`card-back glass p-4 md:p-5 rounded-2xl premium-shadow flex flex-col items-center justify-center text-center ${offer.id === bestValueId ? 'border border-[#A51417]/20' : 'border border-white/60'}`}>
+                    <div className={`card-back glass p-4 md:p-5 rounded-2xl premium-shadow flex flex-col items-center justify-center text-center ${offer.id === bestValueId ? 'border border-brand/20' : 'border border-white/60'}`}>
                       <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-3">Contact {offer.profiles?.first_name || "Seller"}</p>
                       {offer.profiles?.contact_info ? (
                         getContactHref(offer.profiles.contact_info) ? (
-                          <a href={getContactHref(offer.profiles.contact_info)} className="text-base font-bold text-[#A51417] hover:underline break-all">{offer.profiles.contact_info}</a>
+                          <a href={getContactHref(offer.profiles.contact_info)} className="text-base font-bold text-brand hover:underline break-all">{offer.profiles.contact_info}</a>
                         ) : (
                           <p className="text-base font-bold text-gray-800 break-all">{offer.profiles.contact_info}</p>
                         )
