@@ -12,9 +12,14 @@
     warning -> warnings, used sparingly
 */
 @theme {
-  --color-brand: #A51417;
-  --color-brand-tint: #fef2f2;  /* soft fills behind brand-colored text */
-  --color-brand-ring: #fee2e2;  /* focus rings */
+  /*
+    WashU's official palette is green AND red. Green leads because red reads as
+    "loss" in a financial context, which is the wrong signal on a marketplace.
+    Verify this hex against WashU's brand guidelines before shipping widely.
+  */
+  --color-brand: #215732;
+  --color-brand-tint: #edf4ef;  /* soft fills behind brand-colored text */
+  --color-brand-ring: #dce9e0;  /* focus rings */
 
   --color-danger: #A51417;
   --color-danger-tint: #fef2f2;
@@ -25,7 +30,7 @@
 
 :root {
   /* rgb triplet of --color-brand, for rgb(... / alpha) in plain CSS below */
-  --brand-rgb: 165 20 23;
+  --brand-rgb: 33 87 50;
   --bg-cream: var(--color-cream);
 }
 

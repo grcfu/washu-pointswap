@@ -427,7 +427,7 @@ export default function Home() {
             <div>
               <h2 className="text-6xl serif italic text-gray-900 tracking-tighter">Marketplace</h2>
               <div className="flex items-center gap-3 mt-3">
-                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                <span className="w-2 h-2 bg-brand rounded-full animate-pulse"></span>
                 <p className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.3em]">{offers.length} {offers.length === 1 ? 'Listing' : 'Listings'} Live</p>
               </div>
             </div>
