@@ -2,7 +2,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// Same-origin route handlers in src/app/api — no CORS, no separate backend host.
+// Override only to point at the optional FastAPI app in backend/ instead.
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 function timeAgo(dateString) {
   if (!dateString) return '';
@@ -126,7 +128,14 @@ export default function Home() {
         return res.json();
       })
       .then(data => setOffers(data))
-      .catch(err => setFetchError(err.message))
+      .catch(err => {
+        // A TypeError here means the request never reached the API at all —
+        // server down, wrong NEXT_PUBLIC_API_URL, or a CORS-less error page.
+        // Don't show the browser's raw "Failed to fetch" to students.
+        const offline = err instanceof TypeError;
+        if (offline) console.error(`Could not reach the API at ${apiUrl}:`, err);
+        setFetchError(offline ? "Can't reach the marketplace right now." : err.message);
+      })
       .finally(() => setLoadingOffers(false));
   }, []);
 

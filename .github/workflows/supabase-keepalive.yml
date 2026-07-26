@@ -1,0 +1,47 @@
+name: Supabase keepalive
+
+# Supabase pauses free-tier projects after ~7 days of no activity. A paused project
+# stops resolving in DNS, which takes the whole app down. This runs a tiny read
+# every 3 days so the project always looks active.
+#
+# Setup: add two repo secrets under Settings -> Secrets and variables -> Actions:
+#   SUPABASE_URL       https://<project-ref>.supabase.co
+#   SUPABASE_ANON_KEY  the publishable/anon key (already public in the frontend bundle)
+
+on:
+  schedule:
+    # 07:17 UTC every 3rd day. Off-the-hour so it isn't queued behind GitHub's
+    # top-of-hour cron spike, which can delay a job by 20+ minutes.
+    - cron: '17 7 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query the offers table
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_ANON_KEY:-}" ]; then
+            echo "::error::SUPABASE_URL and SUPABASE_ANON_KEY repo secrets are not set."
+            exit 1
+          fi
+
+          # limit=1 keeps this cheap; we only need the request to hit Postgres.
+          code=$(curl -sS -o /tmp/body.txt -w '%{http_code}' --max-time 30 --retry 3 --retry-delay 10 \
+            "${SUPABASE_URL}/rest/v1/offers?select=id&limit=1" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+
+          echo "HTTP $code"
+          cat /tmp/body.txt
+
+          if [ "$code" != "200" ]; then
+            echo "::error::Keepalive failed — the project may be paused or the key rotated."
+            exit 1
+          fi
+          echo "Project is awake."
