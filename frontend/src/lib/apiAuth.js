@@ -28,8 +28,13 @@ export class ApiError extends Error {
   }
 }
 
-// Port of the FastAPI `get_current_user` dependency: verify the Supabase access
-// token and return the user's id.
+// Google OAuth will happily issue a session to any Google account, so the WashU-only
+// rule has to be enforced here. page.js runs the same check to sign non-WashU users
+// out, but that is only UX — a browser-side check is not an authorization boundary.
+const ALLOWED_EMAIL_DOMAIN = '@wustl.edu'
+
+// Verify the Supabase access token, confirm the account is WashU, and return its id.
+// Every write path goes through here, so the restriction fails closed by default.
 export async function getCurrentUser(request) {
   const authHeader = request.headers.get('authorization')
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -41,6 +46,13 @@ export async function getCurrentUser(request) {
   if (error || !data?.user) {
     throw new ApiError(401, 'Invalid or expired token')
   }
+
+  // 403, not 401: the token is genuine, the account just isn't allowed to post.
+  const email = data.user.email?.toLowerCase() ?? ''
+  if (!email.endsWith(ALLOWED_EMAIL_DOMAIN)) {
+    throw new ApiError(403, `Only ${ALLOWED_EMAIL_DOMAIN} accounts can post or remove listings.`)
+  }
+
   return data.user.id
 }
 

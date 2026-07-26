@@ -77,9 +77,11 @@ export default function Home() {
   const [showMine, setShowMine] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
 
+  // UX only — the real enforcement lives in getCurrentUser on the server.
+  // Lowercased so this agrees with the server check on mixed-case addresses.
   const verifyWustlEmail = async (session) => {
     if (!session?.user) return null;
-    if (!session.user.email?.endsWith('@wustl.edu')) {
+    if (!session.user.email?.toLowerCase().endsWith('@wustl.edu')) {
       await supabase.auth.signOut();
       setLoginMsg('Only @wustl.edu emails are allowed.');
       setShowLogin(true);

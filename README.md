@@ -6,7 +6,7 @@ WashU Pointswap solves the "end-of-semester balance" problem by providing a secu
 **🚀 Try it out: [Live Demo](https://washu-pointswap.vercel.app/)**
 
 ## Features
-* **Google OAuth Integration:** One-tap login through Supabase Auth, gated to `@wustl.edu` accounts.
+* **Google OAuth Integration:** One-tap login through Supabase Auth, restricted to `@wustl.edu` accounts and enforced server-side on every write.
 * **Live Marketplace:** A real-time feed of active meal point offers with instant contact options and a sleek card-flip interface.
 * **Sorting & Best Value:** Sort listings by price, quantity, or recency, with an automatic badge on the lowest price-per-point offer.
 * **Pinterest-Inspired UI:** A premium interface utilizing Glassmorphism and a sophisticated Geist Sans & Lora Serif font pairing.
@@ -31,7 +31,7 @@ WashU Pointswap solves the "end-of-semester balance" problem by providing a secu
 ## Architecture & Design Decisions
 
 * **Same-Origin API:** The API originally ran as a standalone [FastAPI](https://fastapi.tiangolo.com/) service on Railway. It was consolidated into Next.js route handlers served from the same origin as the frontend, which removed cross-origin requests entirely and eliminated a second deployment that could fail independently of the app. The original Python implementation is preserved in `backend/` for reference.
-* **Server-Side Token Verification:** Writes never trust the client. Each request carries the user's Supabase access token as a bearer header, which is verified server-side before the database is touched. Deletes are additionally scoped by `seller_id`, so a seller can only remove their own listings.
+* **Server-Side Token Verification:** Writes never trust the client. Each request carries the user's Supabase access token as a bearer header, which is verified server-side before the database is touched. Because Google OAuth will issue a session to *any* Google account, the `@wustl.edu` restriction is enforced at this layer rather than in the browser — the client-side check exists only to give non-WashU users a clear message. Deletes are additionally scoped by `seller_id`, so a seller can only remove their own listings.
 * **Relational Joins:** The marketplace feed uses a PostgreSQL join via Supabase to fetch `offers` alongside their `profiles` in a single round trip, rather than issuing a query per listing.
 * **Operational Resilience:** A `/api/health` endpoint reads from Postgres and returns `503` when the database is unreachable, so an external uptime monitor doubles as both an alerting hook and a keepalive for Supabase's free tier.
 * **Responsive Grid:** A card grid that adapts from a high-density four-column desktop view down to a focused two-column mobile experience.

@@ -34,9 +34,14 @@ alive. Shared helpers live in `frontend/src/lib/apiAuth.js`.
 - `GET /api/health` — reads one row from `offers`; ping it to keep Supabase awake
 
 Writes call `getCurrentUser(request)`, which requires an
-`Authorization: Bearer <supabase_access_token>` header and verifies it via
-`supabase.auth.getUser(token)`. Deletes are scoped by `.eq('seller_id', userId)` and
-return 404 when zero rows match, so a seller can only remove their own offers.
+`Authorization: Bearer <supabase_access_token>` header, verifies it via
+`supabase.auth.getUser(token)`, and then rejects any account whose email is not
+`@wustl.edu` with a **403**. Google OAuth issues sessions to any Google account, so this
+server-side check is the actual WashU-only boundary — `verifyWustlEmail` in `page.js` is
+UX only and cannot be relied on. Both comparisons lowercase the address so they agree.
+
+Deletes are scoped by `.eq('seller_id', userId)` and return 404 when zero rows match, so
+a seller can only remove their own offers.
 
 Errors are returned as `{ "detail": "..." }` to match FastAPI's shape, which is what
 `page.js` reads.
@@ -68,7 +73,8 @@ delete this directory. Run it with `NEXT_PUBLIC_API_URL=http://localhost:8000`.
 ### Auth
 Google OAuth via `supabase.auth.signInWithOAuth({ provider: 'google' })`, redirecting to
 `window.location.origin`. Frontend manages session state via `supabase.auth`. Browsing the
-marketplace is public; posting and deleting require sign-in.
+marketplace is public; posting and deleting require a signed-in `@wustl.edu` account,
+enforced server-side (see the API section).
 
 ### Environment
 See `.env.example` and `frontend/.env.example` for the full list. Neither `.env` is committed.
