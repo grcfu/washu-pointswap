@@ -34,18 +34,127 @@
   --color-danger-tint: #fef2f2;
   --color-danger-ring: #fee2e2;
 
+  /*
+    Brand as TEXT, kept separate from the brand fill above. They are identical in
+    light mode but must diverge in dark: a fill light enough to read as green on a
+    dark page fails white-on-fill contrast (1.96:1), while a green dark enough for
+    white text is nearly invisible as body text. Two tokens, measured:
+    white on --color-brand 5.99:1, --color-brand-ink on dark panel 8.12:1.
+  */
+  --color-brand-ink: #215732;
+  --color-brand-ink-soft: #6d8f79;  /* value-scale middle tier */
+
   --color-cream: #fdfbf9;
+
+  /*
+    Semantic surfaces and text. Light values are byte-for-byte what the Tailwind
+    neutrals they replaced produced, so adopting them changed nothing; the point
+    is that they are single tokens a dark theme can override.
+
+    These exist because Tailwind bakes the hex for any utility with an opacity
+    modifier (bg-white/90 -> #ffffffe6), which a runtime variable override cannot
+    reach. Folding the alpha into the token keeps it live.
+  */
+  --color-ink: #101828;
+  --color-ink-2: #1e2939;
+  --color-ink-soft: #364153;
+  --color-ink-mid: #6a7282;
+  --color-ink-muted: #99a1af;
+  --color-ink-faint: #d1d5dc;
+  --color-ink-strong: #000;
+
+  --color-line: #f3f4f6;
+  --color-line-2: #e5e7eb;
+
+  --color-panel: rgb(255 255 255 / 0.9);
+  --color-panel-strong: rgb(255 255 255 / 0.95);
+  --color-panel-solid: #fff;
+  --color-field: rgb(255 255 255 / 0.5);
+  --color-scrim: rgb(255 255 255 / 0.1);
+  --color-edge: rgb(255 255 255 / 0.6);
+  --color-edge-soft: rgb(255 255 255 / 0.4);
+  --color-edge-solid: #fff;
+  --color-subtle: #f3f4f6;
+  --color-subtle-2: #e5e7eb;
+
+  /* High-contrast inverse buttons (Sign in, Contact) */
+  --color-inverse: #101828;
+  --color-inverse-hover: #000;
+  --color-on-inverse: #fff;
+  /* Hover target for brand-filled buttons */
+  --color-brand-hover: #000;
+}
+
+/*
+  Dark theme. Only token values change -- no markup, no duplicated rules.
+  Follows the OS setting; there is no in-app toggle.
+*/
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-brand: #2c7043;
+    --brand-rgb: 44 112 67;
+    --color-brand-ink: #7fc99a;
+    --color-brand-ink-soft: #4e7d5e;
+    --color-brand-tint: #1b3325;
+    --color-brand-ring: #24422f;
+    --color-brand-hover: #3d8c56;
+
+    --color-danger: #f87171;
+    --color-danger-tint: #2a1718;
+    --color-danger-ring: #3a1e1f;
+    --color-accent: #e26d6f;
+
+    /* Doubles as the page background and the bear's facial features, which
+       should read dark against a brand-green bear in either theme. */
+    --color-cream: #111b15;
+
+    --color-ink: #e8e6e3;
+    --color-ink-2: #dcdad7;
+    --color-ink-soft: #c6c4c1;
+    --color-ink-mid: #a8a6a3;
+    --color-ink-muted: #99a1af;
+    --color-ink-faint: #6a737f;
+    --color-ink-strong: #fff;
+
+    --color-line: rgb(255 255 255 / 0.1);
+    --color-line-2: rgb(255 255 255 / 0.14);
+
+    --color-panel: rgb(24 37 29 / 0.9);
+    --color-panel-strong: rgb(24 37 29 / 0.96);
+    --color-panel-solid: #18251d;
+    --color-field: rgb(255 255 255 / 0.05);
+    --color-scrim: rgb(0 0 0 / 0.45);
+    --color-edge: rgb(255 255 255 / 0.1);
+    --color-edge-soft: rgb(255 255 255 / 0.07);
+    --color-edge-solid: rgb(255 255 255 / 0.12);
+    --color-subtle: rgb(255 255 255 / 0.08);
+    --color-subtle-2: rgb(255 255 255 / 0.14);
+
+    --color-inverse: #e8e6e3;
+    --color-inverse-hover: #fff;
+    --color-on-inverse: #111b15;
+
+    /* Plain-CSS helpers used by .glass, .skeleton and .ripple below */
+    --glass-border: rgb(255 255 255 / 0.08);
+    --skeleton-a: rgb(255 255 255 / 0.05);
+    --skeleton-b: rgb(255 255 255 / 0.1);
+    --ripple-tint: rgb(255 255 255 / 0.18);
+  }
 }
 
 :root {
   /* rgb triplet of --color-brand, for rgb(... / alpha) in plain CSS below */
   --brand-rgb: 33 87 50;
   --bg-cream: var(--color-cream);
+  --glass-border: rgb(255 255 255 / 0.7);
+  --skeleton-a: rgb(0 0 0 / 0.04);
+  --skeleton-b: rgb(0 0 0 / 0.08);
+  --ripple-tint: rgb(255 255 255 / 0.4);
 }
 
 body {
   background-color: var(--bg-cream);
-  color: #1a1a1a;
+  color: var(--color-ink);
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui;
   -webkit-font-smoothing: antialiased;
   position: relative;
@@ -93,10 +202,10 @@ body::after {
 }
 
 .glass {
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--color-panel);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--glass-border);
 }
 
 .premium-shadow {
@@ -155,7 +264,7 @@ body::after {
 }
 
 .skeleton {
-  background: linear-gradient(90deg, rgba(0,0,0,0.04) 25%, rgba(0,0,0,0.08) 50%, rgba(0,0,0,0.04) 75%);
+  background: linear-gradient(90deg, var(--skeleton-a) 25%, var(--skeleton-b) 50%, var(--skeleton-a) 75%);
   background-size: 200% 100%;
   animation: skeletonShimmer 1.5s ease-in-out infinite;
   border-radius: 1rem;
@@ -176,7 +285,7 @@ body::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), rgba(255,255,255,0.4) 0%, transparent 60%);
+  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), var(--ripple-tint) 0%, transparent 60%);
   opacity: 0;
   transition: opacity 0.1s;
   pointer-events: none;
