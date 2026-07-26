@@ -21,6 +21,15 @@
   --color-brand-tint: #edf4ef;  /* soft fills behind brand-colored text */
   --color-brand-ring: #dce9e0;  /* focus rings */
 
+  /*
+    WashU red, kept deliberately as a decorative accent so the school's red/green
+    duality survives the switch to a green brand. Same hex as danger but a
+    separate token on purpose: "a nod to WashU red" and "something went wrong"
+    are different ideas and should be able to diverge later.
+    Use sparingly -- it stops reading as an accent the moment it is common.
+  */
+  --color-accent: #A51417;
+
   --color-danger: #A51417;
   --color-danger-tint: #fef2f2;
   --color-danger-ring: #fee2e2;
