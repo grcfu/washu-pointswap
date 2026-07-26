@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import BearMark from '../components/BearMark';
 
 // Same-origin route handlers in src/app/api — no CORS, no separate backend host.
 // Override only to point at the optional FastAPI app in backend/ instead.
@@ -269,7 +270,8 @@ export default function Home() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center px-6 page-transition">
-        <div className="text-center">
+        <div className="flex flex-col items-center text-center">
+          <BearMark size={56} className="mb-5" />
           {/* Red period: a small nod to WashU's other official color. */}
           <h1 className="text-5xl font-light text-brand italic serif mb-4">Pointswap<span className="text-accent">.</span></h1>
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.4em] animate-pulse">Loading...</p>
@@ -282,9 +284,12 @@ export default function Home() {
     <main className="min-h-screen page-transition flex flex-col">
       <nav className="fixed top-0 w-full z-50 glass border-b border-white/40 h-24 flex items-center justify-center">
         <div className="max-w-7xl w-full px-8 md:px-16 flex justify-between items-center">
-          <div className="flex flex-col">
-            <h1 className="text-3xl font-light text-brand italic serif tracking-tight leading-none">Pointswap<span className="text-accent">.</span></h1>
-            <span className="text-[8px] font-bold text-gray-400 uppercase tracking-[0.3em] mt-1 ml-1">Washington University in St. Louis</span>
+          <div className="flex items-center gap-3">
+            <BearMark size={38} className="shrink-0" title="Pointswap" />
+            <div className="flex flex-col">
+              <h1 className="text-3xl font-light text-brand italic serif tracking-tight leading-none">Pointswap<span className="text-accent">.</span></h1>
+              <span className="text-[8px] font-bold text-gray-400 uppercase tracking-[0.3em] mt-1 ml-1">Washington University in St. Louis</span>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <button onClick={() => setShowHelp(true)} className="px-5 py-2 bg-brand text-white text-[9px] font-black uppercase tracking-widest rounded-full hover:bg-black transition-all ripple">How it works</button>
@@ -476,16 +481,7 @@ export default function Home() {
               </div>
             ) : sortedOffers.length === 0 ? (
               <div className="col-span-full py-32 text-center glass rounded-[3rem] flex flex-col items-center justify-center">
-                <svg width="80" height="80" viewBox="0 0 100 100" className="mb-6 opacity-20">
-                  <circle cx="50" cy="52" r="30" fill="var(--color-brand)" />
-                  <circle cx="30" cy="30" r="14" fill="var(--color-brand)" />
-                  <circle cx="70" cy="30" r="14" fill="var(--color-brand)" />
-                  <circle cx="30" cy="30" r="8" fill="var(--color-cream)" />
-                  <circle cx="70" cy="30" r="8" fill="var(--color-cream)" />
-                  <circle cx="42" cy="46" r="4" fill="var(--color-cream)" />
-                  <circle cx="58" cy="46" r="4" fill="var(--color-cream)" />
-                  <ellipse cx="50" cy="56" rx="5" ry="3.5" fill="var(--color-cream)" />
-                </svg>
+                <BearMark size={80} className="mb-6 opacity-20" />
                 <p className="serif italic text-gray-300 text-xl">{showMine ? "You haven't listed anything yet." : "No listings yet — be the first!"}</p>
               </div>
             ) : (
