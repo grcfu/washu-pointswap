@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!--
+    Browser tab icon. Geometry mirrors src/components/BearMark.jsx; keep the two
+    in sync. Colors are literal here rather than var(--color-brand) because a
+    favicon is loaded as a standalone document and inherits no page CSS.
+    Brand green #215732, cream #fdfbf9.
+  -->
+  <rect width="100" height="100" rx="22" fill="#215732"/>
+  <circle cx="50" cy="54" r="26" fill="#fdfbf9"/>
+  <circle cx="32" cy="34" r="12" fill="#fdfbf9"/>
+  <circle cx="68" cy="34" r="12" fill="#fdfbf9"/>
+  <circle cx="32" cy="34" r="6.5" fill="#215732"/>
+  <circle cx="68" cy="34" r="6.5" fill="#215732"/>
+  <circle cx="42" cy="49" r="3.6" fill="#215732"/>
+  <circle cx="58" cy="49" r="3.6" fill="#215732"/>
+  <ellipse cx="50" cy="60" rx="4.6" ry="3.2" fill="#215732"/>
+</svg>
