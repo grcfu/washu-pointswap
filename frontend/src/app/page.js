@@ -307,7 +307,7 @@ export default function Home() {
               <svg width="18" height="18" viewBox="0 0 18 18"><path d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z" fill="#4285F4"/><path d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z" fill="#34A853"/><path d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z" fill="#FBBC05"/><path d="M8.98 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.59A8 8 0 0 0 1.83 5.4L4.5 7.49A4.77 4.77 0 0 1 8.98 3.58z" fill="#EA4335"/></svg>
               Continue with Google
             </button>
-            {loginMsg && <p className="mt-8 text-xs font-bold text-brand bg-brand-tint px-4 py-3 rounded-2xl">{loginMsg}</p>}
+            {loginMsg && <p className="mt-8 text-xs font-bold text-danger bg-danger-tint px-4 py-3 rounded-2xl">{loginMsg}</p>}
           </div>
         </div>
       )}
@@ -319,7 +319,7 @@ export default function Home() {
             <button onClick={() => setShowProfile(false)} className="absolute top-6 right-8 text-gray-300 hover:text-black transition-colors">✕</button>
             <h2 className="text-2xl serif italic mb-2">Account</h2>
             <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-8">{user.email}</p>
-            <button onClick={() => { if (confirm('Sign out?')) { supabase.auth.signOut(); setShowProfile(false); } }} className="w-full py-4 bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-brand-tint hover:text-brand transition-all">
+            <button onClick={() => { if (confirm('Sign out?')) { supabase.auth.signOut(); setShowProfile(false); } }} className="w-full py-4 bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-danger-tint hover:text-danger transition-all">
               Sign out
             </button>
           </div>
@@ -415,7 +415,8 @@ export default function Home() {
                   </p>
                 )}
                 <button type="submit" disabled={posting || !formReady} className="w-full py-5 bg-brand text-white font-bold rounded-full hover:bg-black transition-all uppercase tracking-widest text-[10px] shadow-xl shadow-brand-tint/50 disabled:opacity-40 disabled:hover:bg-brand ripple">{posting ? 'Posting...' : 'Post Offer'}</button>
-                {listingMsg && <p className="text-center text-[10px] font-bold uppercase text-brand mt-2">{listingMsg}</p>}
+                {/* Only ever an error: the success path sets formCollapsed, which unmounts this form. */}
+                {listingMsg && <p className="text-center text-[10px] font-bold uppercase text-danger mt-2">{listingMsg}</p>}
               </form>
             )}
           </section>
@@ -469,7 +470,7 @@ export default function Home() {
               </>
             ) : fetchError ? (
               <div className="col-span-full py-32 text-center glass rounded-[3rem]">
-                <p className="serif italic text-brand text-xl mb-4">{fetchError}</p>
+                <p className="serif italic text-danger text-xl mb-4">{fetchError}</p>
                 <button onClick={fetchOffers} className="px-6 py-2 bg-brand text-white text-[9px] font-black uppercase tracking-widest rounded-full hover:bg-black transition-all ripple">Try Again</button>
               </div>
             ) : sortedOffers.length === 0 ? (
@@ -508,7 +509,7 @@ export default function Home() {
 
                         <div className="mt-3">
                         {user && user.id === offer.seller_id ? (
-                          <button onClick={() => handleDelete(offer.id)} disabled={deleting === offer.id} className="w-full py-2.5 bg-brand-tint text-brand text-[9px] font-black rounded-full hover:bg-brand-ring uppercase tracking-widest transition-all disabled:opacity-50 ripple">{deleting === offer.id ? 'Removing...' : 'Mark as Sold'}</button>
+                          <button onClick={() => handleDelete(offer.id)} disabled={deleting === offer.id} className="w-full py-2.5 bg-danger-tint text-danger text-[9px] font-black rounded-full hover:bg-danger-ring uppercase tracking-widest transition-all disabled:opacity-50 ripple">{deleting === offer.id ? 'Removing...' : 'Mark as Sold'}</button>
                         ) : (
                           <button onClick={() => handleContactClick(offer.id)} className="w-full py-2.5 bg-gray-900 text-white text-[9px] font-black rounded-full hover:bg-brand uppercase tracking-widest text-center block transition-all ripple">Contact</button>
                         )}
