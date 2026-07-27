@@ -47,8 +47,16 @@ export async function getCurrentUser(request) {
     throw new ApiError(401, 'Invalid or expired token')
   }
 
+  // A token with no email at all is a provider configuration problem, not a user
+  // error -- Entra ID omits the email claim unless the scope is requested. Say so
+  // distinctly, otherwise a legitimate WashU student sees "wrong domain" and there
+  // is nothing they can do about it.
+  const email = data.user.email?.toLowerCase()
+  if (!email) {
+    throw new ApiError(403, 'Your account did not share an email address, so we cannot verify you are a WashU student.')
+  }
+
   // 403, not 401: the token is genuine, the account just isn't allowed to post.
-  const email = data.user.email?.toLowerCase() ?? ''
   if (!email.endsWith(ALLOWED_EMAIL_DOMAIN)) {
     throw new ApiError(403, `Only ${ALLOWED_EMAIL_DOMAIN} accounts can post or remove listings.`)
   }

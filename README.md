@@ -6,7 +6,7 @@ WashU Pointswap solves the "end-of-semester balance" problem by providing a secu
 **🚀 Try it out: [Live Demo](https://washu-pointswap.vercel.app/)**
 
 ## Features
-* **Google OAuth Integration:** One-tap login through Supabase Auth, restricted to `@wustl.edu` accounts and enforced server-side on every write.
+* **Google OAuth Integration:** One-tap login through Supabase Auth, restricted to `@wustl.edu` accounts and enforced server-side on every write rather than in the browser.
 * **Live Marketplace:** A real-time feed of active meal point offers with instant contact options and a sleek card-flip interface.
 * **Sorting & Best Value:** Sort listings by price, quantity, or recency, with an automatic badge on the lowest price-per-point offer.
 * **Pinterest-Inspired UI:** A premium interface utilizing Glassmorphism and a sophisticated Geist Sans & Lora Serif font pairing, in WashU green with a full dark mode.

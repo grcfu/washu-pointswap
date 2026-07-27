@@ -199,7 +199,24 @@ export default function Home() {
     return true;
   };
 
-  const handleGoogleLogin = async () => {
+  /*
+    Google is the only provider, and that is a constraint rather than a choice.
+
+    Microsoft Entra ID would be the natural fit, since WashU mailboxes are Microsoft
+    365 rather than Google Workspace. It is not usable: WashU's tenant blocks user
+    consent for third-party multi-tenant apps. Signing into any such app with a
+    @wustl.edu account returns "Need admin approval" -- verified in July 2026 against
+    Notion, a vendor far larger than this project. Adding the button would give every
+    student a primary action that cannot succeed without WashU IT sign-off.
+
+    The cost of Google-only is real and worth remembering: it works only for students
+    who created a Google account on their @wustl.edu address. Anyone who has not
+    cannot sign in at all, and there is currently no fallback for them.
+
+    The domain restriction is not enforced here; see getCurrentUser.
+  */
+  const signInWithGoogle = async () => {
+    setLoginMsg('');
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: window.location.origin },
@@ -334,8 +351,9 @@ export default function Home() {
             <button onClick={() => { setShowLogin(false); setLoginMsg(''); }} className="absolute top-6 right-8 text-ink-faint hover:text-ink-strong transition-colors">✕</button>
             <h2 className="text-3xl font-light text-brand-ink italic serif mb-2">Sign in</h2>
             <p className="text-sm text-ink-mid font-semibold mb-8">Use your <span className="text-brand-ink font-bold">@wustl.edu</span> Google account</p>
-            <button onClick={handleGoogleLogin} className="w-full py-4 bg-panel-solid border border-line-2 rounded-full font-bold text-sm text-ink-soft shadow-md hover:shadow-lg hover:border-line-2 transition-all flex items-center justify-center gap-3 ripple">
-              <svg width="18" height="18" viewBox="0 0 18 18"><path d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z" fill="#4285F4"/><path d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z" fill="#34A853"/><path d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z" fill="#FBBC05"/><path d="M8.98 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.59A8 8 0 0 0 1.83 5.4L4.5 7.49A4.77 4.77 0 0 1 8.98 3.58z" fill="#EA4335"/></svg>
+
+            <button onClick={signInWithGoogle} className="w-full py-4 bg-panel-solid border border-line-2 rounded-full font-bold text-sm text-ink-soft shadow-md hover:shadow-lg hover:border-line-2 transition-all flex items-center justify-center gap-3 ripple">
+              <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z" fill="#4285F4"/><path d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z" fill="#34A853"/><path d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z" fill="#FBBC05"/><path d="M8.98 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.59A8 8 0 0 0 1.83 5.4L4.5 7.49A4.77 4.77 0 0 1 8.98 3.58z" fill="#EA4335"/></svg>
               Continue with Google
             </button>
             {loginMsg && <p className="mt-8 text-xs font-bold text-danger bg-danger-tint px-4 py-3 rounded-2xl">{loginMsg}</p>}
@@ -376,7 +394,7 @@ export default function Home() {
                 <span className="w-10 h-10 md:w-12 md:h-12 bg-brand-tint text-brand-ink rounded-full flex items-center justify-center text-base md:text-lg font-bold shrink-0">2</span>
                 <div>
                   <p className="text-base md:text-lg font-bold text-ink-2">Sell your points</p>
-                  <p className="text-sm md:text-base text-ink-muted mt-1 leading-relaxed">Sign in with your WashU Google account, fill in your name, contact info, how many points you have (100–500), and your total asking price. Your listing goes live instantly.</p>
+                  <p className="text-sm md:text-base text-ink-muted mt-1 leading-relaxed">Sign in with your WashU account, fill in your name, contact info, how many points you have (100–500), and your total asking price. Your listing goes live instantly.</p>
                 </div>
               </div>
               <div className="flex gap-5 items-start">

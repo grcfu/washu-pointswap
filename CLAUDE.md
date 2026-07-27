@@ -74,10 +74,23 @@ already drifted: it does **not** enforce the `@wustl.edu` restriction. Its commi
 - Relationship: `offers.seller_id` → `profiles.id`
 
 ### Auth
-Google OAuth via `supabase.auth.signInWithOAuth({ provider: 'google' })`, redirecting to
-`window.location.origin`. Frontend manages session state via `supabase.auth`. Browsing the
-marketplace is public; posting and deleting require a signed-in `@wustl.edu` account,
-enforced server-side (see the API section).
+Google OAuth only, via `supabase.auth.signInWithOAuth({ provider: 'google' })`, redirecting
+to `window.location.origin`. Browsing is public; posting and deleting require a
+`@wustl.edu` account, enforced server-side in `getCurrentUser` (see the API section) —
+the provider itself is not the security boundary.
+
+**Do not add Microsoft Entra ID.** It looks like the obvious fix, because WashU mailboxes
+are Microsoft 365 and not Google Workspace, but WashU's tenant blocks user consent for
+third-party multi-tenant apps. A `@wustl.edu` account signing into any such app gets
+"Need admin approval" — verified July 2026 against Notion, a far larger vendor than this
+project. It would need a WashU IT exception, not a code change. Relatedly, students cannot
+create app registrations in WashU's own directory ("You don't have access").
+
+**Known limitation:** Google sign-in only works for students who created a Google account
+*on* their `@wustl.edu` address. Every existing user did, but that is survivorship bias —
+anyone without one cannot sign in at all, and there is no fallback. Fixing that properly
+means an email-based path (OTP code or magic link), which is the only delivery mechanism
+that reaches a Microsoft 365 mailbox.
 
 ### Environment
 See `.env.example` and `frontend/.env.example` for the full list. Neither `.env` is committed.
