@@ -1,36 +1,35 @@
+import Image from 'next/image'
+import bearArt from './bear.png'
+
 /*
-  The Pointswap bear — the single source of truth for the mark.
+  The Pointswap bear — the single source of truth for the mark, used in the nav, the
+  auth loading screen and the empty state.
 
-  This is the simplified in-app mark only. The browser tab uses a different asset:
-  the original hand-drawn coffee-bear illustration in src/app/icon*.png. That split
-  is intentional -- a detailed illustration turns to mush at 38px in the nav, and a
-  raster cannot follow the theme tokens. Do not try to unify them.
+  This is the original hand-drawn illustration with its crimson background knocked
+  out to transparency, so the same asset sits correctly on the cream light surface
+  and the dark green one without needing a per-theme variant. That is why it must
+  stay a transparent PNG: fill it with a background again and it will only work on
+  one theme.
 
-  Colors come from the theme tokens, so this mark follows the brand automatically
-  and works on any surface that sets them.
+  The browser tab uses the same drawing with an opaque green background
+  (src/app/icon*.png), because a tab icon is composited against browser chrome
+  rather than the page.
+
+  Being a raster, this no longer follows the color tokens the way the old geometric
+  mark did. That is the accepted trade for using the real artwork.
 */
-export default function BearMark({ size = 80, className = '', title }) {
+export default function BearMark({ size = 80, className = '', title, priority = false }) {
   return (
-    <svg
+    <Image
+      src={bearArt}
+      // Decorative unless a title is given, in which case it carries the name.
+      alt={title || ''}
+      aria-hidden={title ? undefined : true}
       width={size}
       height={size}
-      viewBox="0 0 100 100"
       className={className}
-      role={title ? 'img' : undefined}
-      aria-hidden={title ? undefined : true}
-    >
-      {title && <title>{title}</title>}
-      {/* head and ears */}
-      <circle cx="50" cy="52" r="30" fill="var(--color-brand)" />
-      <circle cx="30" cy="30" r="14" fill="var(--color-brand)" />
-      <circle cx="70" cy="30" r="14" fill="var(--color-brand)" />
-      {/* inner ears */}
-      <circle cx="30" cy="30" r="8" fill="var(--color-cream)" />
-      <circle cx="70" cy="30" r="8" fill="var(--color-cream)" />
-      {/* eyes and muzzle */}
-      <circle cx="42" cy="46" r="4" fill="var(--color-cream)" />
-      <circle cx="58" cy="46" r="4" fill="var(--color-cream)" />
-      <ellipse cx="50" cy="56" rx="5" ry="3.5" fill="var(--color-cream)" />
-    </svg>
+      // Set on above-the-fold instances so lazy loading cannot flash an empty slot.
+      priority={priority}
+    />
   )
 }

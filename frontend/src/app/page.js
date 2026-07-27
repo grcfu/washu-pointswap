@@ -295,7 +295,7 @@ export default function Home() {
     return (
       <div className="min-h-screen flex items-center justify-center px-6 page-transition">
         <div className="flex flex-col items-center text-center">
-          <BearMark size={56} className="mb-5" />
+          <BearMark size={56} className="mb-5" priority />
           {/* Red period: a small nod to WashU's other official color. */}
           <h1 className="text-5xl font-light text-brand-ink italic serif mb-4">Pointswap<span className="text-accent">.</span></h1>
           <p className="text-[10px] font-bold text-ink-muted uppercase tracking-[0.4em] animate-pulse">Loading...</p>
@@ -309,7 +309,7 @@ export default function Home() {
       <nav className="fixed top-0 w-full z-50 glass border-b border-edge-soft h-24 flex items-center justify-center">
         <div className="max-w-7xl w-full px-8 md:px-16 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <BearMark size={38} className="shrink-0" title="Pointswap" />
+            <BearMark size={38} className="shrink-0" title="Pointswap" priority />
             <div className="flex flex-col">
               <h1 className="text-3xl font-light text-brand-ink italic serif tracking-tight leading-none">Pointswap<span className="text-accent">.</span></h1>
               <span className="text-[8px] font-bold text-ink-muted uppercase tracking-[0.3em] mt-1 ml-1">Washington University in St. Louis</span>

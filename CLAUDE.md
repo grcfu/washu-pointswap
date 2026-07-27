@@ -113,6 +113,17 @@ Roles, which are enforced by convention, not tooling:
 - Fonts: Geist Sans, Geist Mono, Lora (serif for headings)
 - `public/bg.jpg` is a **red** paper texture, recolored at runtime by blending
   `--color-brand` over it with `background-blend-mode: color`. Don't "fix" the asset.
+- The bear is the author's own illustration and exists as two derived assets, both
+  generated from the original 1181px artwork:
+  - `src/components/bear.png` — background knocked out to **transparency**, used by
+    `BearMark` in the nav, loading screen and empty state. It must stay transparent:
+    give it a background and it will only work in one theme.
+  - `src/app/icon0.png` (32px) and `icon1.png` / `apple-icon.png` (180px) — same
+    drawing on an **opaque** brand-green field, for the browser tab, which is
+    composited against browser chrome rather than the page.
+
+  Being raster, the mark does not follow the color tokens. That is a deliberate trade
+  for using the real artwork rather than a geometric stand-in.
 
 Two gotchas worth knowing before editing:
 - **Opacity modifiers bake the hex.** `bg-white/90` compiles to `#ffffffe6`, not a live
