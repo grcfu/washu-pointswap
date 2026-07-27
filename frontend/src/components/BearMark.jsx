@@ -1,11 +1,12 @@
 /*
   The Pointswap bear — the single source of truth for the mark.
 
-  Geometry is duplicated in src/app/icon.svg for the browser tab, because that
-  file is read as a static asset by Next.js's icon convention and cannot import
-  React. Any change to these circles should be mirrored there.
+  This is the simplified in-app mark only. The browser tab uses a different asset:
+  the original hand-drawn coffee-bear illustration in src/app/icon*.png. That split
+  is intentional -- a detailed illustration turns to mush at 38px in the nav, and a
+  raster cannot follow the theme tokens. Do not try to unify them.
 
-  Colors come from the theme tokens, so the mark follows the brand automatically
+  Colors come from the theme tokens, so this mark follows the brand automatically
   and works on any surface that sets them.
 */
 export default function BearMark({ size = 80, className = '', title }) {

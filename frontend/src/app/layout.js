@@ -33,8 +33,8 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} h-full antialiased`}>
       <head>
-        {/* No manual icon link: Next.js injects them from src/app/icon0.svg,
-            icon1.png and apple-icon.png. */}
+        {/* No manual icon link: Next.js injects them from src/app/icon0.png (32px),
+            icon1.png (180px) and apple-icon.png. */}
 
         {/*
           Applies the theme before first paint, so nobody sees a flash of the wrong
