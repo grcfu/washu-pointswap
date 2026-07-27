@@ -78,6 +78,7 @@ export default function Home() {
   const [sortKey, setSortKey] = useState(0);
   const [showMine, setShowMine] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [demoMode, setDemoMode] = useState(false);
 
   // UX only — the real enforcement lives in getCurrentUser on the server.
   // Lowercased so this agrees with the server check on mixed-case addresses.
@@ -194,9 +195,28 @@ export default function Home() {
     };
   };
 
-  const requireAuth = () => {
-    if (!user) { setShowLogin(true); return false; }
-    return true;
+  /*
+    Sample mode lets someone without a WashU email -- a recruiter, a visiting friend --
+    see the signed-in interface instead of a sign-in wall. It is presentation only:
+    no session is created, so every write is rejected by the server with a 401 even if
+    a UI guard were bypassed. `user` stays null throughout.
+
+    Sellers' contact details are deliberately NOT shown in sample mode. Revealing them
+    is the one thing the WashU restriction exists to protect, and a mode anyone can
+    enter by clicking a link must not hand out real students' emails and phone numbers.
+  */
+  const previewing = demoMode && !user;
+
+  const requireAuth = ({ blockedMsg } = {}) => {
+    if (user) return true;
+    if (previewing) {
+      // Don't push a sample-mode visitor into a login modal they cannot complete;
+      // tell them what they'd need instead.
+      if (blockedMsg) setListingMsg(blockedMsg);
+      return false;
+    }
+    setShowLogin(true);
+    return false;
   };
 
   /*
@@ -226,7 +246,7 @@ export default function Home() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!requireAuth()) return;
+    if (!requireAuth({ blockedMsg: 'Sample account — you need a @wustl.edu email to post a listing.' })) return;
     if (!firstName.trim()) {
       setListingMsg('Enter your name so buyers know who you are.');
       return;
@@ -304,7 +324,9 @@ export default function Home() {
   };
 
   const handleContactClick = (offerId) => {
-    if (!requireAuth()) return;
+    // Sample mode may flip the card, but the back face masks the details --
+    // see the card-back branch below.
+    if (!user && !previewing) { setShowLogin(true); return; }
     setRevealedContact(offerId);
   };
 
@@ -333,6 +355,15 @@ export default function Home() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {previewing && (
+              <button
+                onClick={() => { setDemoMode(false); setListingMsg(''); setRevealedContact(null); }}
+                title="Leave sample mode"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-danger-tint text-danger text-[9px] font-black uppercase tracking-widest rounded-full hover:bg-danger-ring transition-all shrink-0"
+              >
+                Sample<span className="hidden sm:inline"> mode · Exit</span>
+              </button>
+            )}
             <ThemeToggle />
             <button onClick={() => setShowHelp(true)} className="px-5 py-2 bg-brand text-white text-[9px] font-black uppercase tracking-widest rounded-full hover:bg-brand-hover transition-all ripple">How it works</button>
             {user ? (
@@ -357,6 +388,19 @@ export default function Home() {
               Continue with Google
             </button>
             {loginMsg && <p className="mt-8 text-xs font-bold text-danger bg-danger-tint px-4 py-3 rounded-2xl">{loginMsg}</p>}
+
+            {/* Escape hatch for anyone without a WashU account, so the app is
+                explorable instead of being a dead end behind a sign-in wall. */}
+            <div className="mt-8 pt-6 border-t border-line">
+              <p className="text-[11px] text-ink-muted mb-3">Not a WashU student?</p>
+              <button
+                onClick={() => { setDemoMode(true); setShowLogin(false); setLoginMsg(''); }}
+                className="text-[10px] font-black text-brand-ink hover:text-brand uppercase tracking-widest border-b border-brand-ring pb-1 transition-all"
+              >
+                Explore a sample account
+              </button>
+              <p className="text-[10px] text-ink-faint mt-3 leading-snug">Browse the full interface. Posting and seller contact details stay locked.</p>
+            </div>
           </div>
         </div>
       )}
@@ -422,7 +466,7 @@ export default function Home() {
         <aside className="lg:col-span-4">
           <section className="glass p-10 rounded-[3rem] premium-shadow sticky top-40">
             <h2 className="text-2xl serif italic mb-8 text-ink-2">List Your Points</h2>
-            {!user ? (
+            {!user && !previewing ? (
               <div className="text-center py-8">
                 <p className="text-sm text-ink-muted mb-6">Sign in to list your points</p>
                 <button onClick={() => setShowLogin(true)} className="px-8 py-4 bg-brand text-white text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-brand-hover transition-all ripple">Sign in to sell</button>
@@ -434,7 +478,11 @@ export default function Home() {
                 <button onClick={() => { setFormCollapsed(false); setListingMsg(''); }} className="text-[10px] font-bold text-ink-muted hover:text-brand-ink uppercase tracking-widest border-b border-line-2 pb-1 transition-all">Post another?</button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-6">
+              /* noValidate only in sample mode: the inputs are `required`, so native
+                 validation would block submit on the empty form and handleSubmit would
+                 never run, leaving the WashU requirement undiscoverable. Real users keep
+                 browser validation. */
+              <form onSubmit={handleSubmit} noValidate={previewing} className="space-y-6">
                 <div>
                   <label className="text-[10px] font-black text-ink-muted uppercase tracking-[0.2em] mb-2 block ml-1">Your name</label>
                   <div className="flex gap-2">
@@ -463,7 +511,10 @@ export default function Home() {
                     Price per point: <span className="serif italic">${perPointPreview}</span>
                   </p>
                 )}
-                <button type="submit" disabled={posting || !formReady} className="w-full py-5 bg-brand text-white font-bold rounded-full hover:bg-brand-hover transition-all uppercase tracking-widest text-[10px] shadow-xl shadow-brand-tint/50 disabled:opacity-40 disabled:hover:bg-brand ripple">{posting ? 'Posting...' : 'Post Offer'}</button>
+                {/* Clickable in sample mode even with an empty form, so the WashU
+                    requirement is discoverable in one click instead of only after
+                    filling in four fields. handleSubmit gates before validating. */}
+                <button type="submit" disabled={posting || (!formReady && !previewing)} className="w-full py-5 bg-brand text-white font-bold rounded-full hover:bg-brand-hover transition-all uppercase tracking-widest text-[10px] shadow-xl shadow-brand-tint/50 disabled:opacity-40 disabled:hover:bg-brand ripple">{posting ? 'Posting...' : 'Post Offer'}</button>
                 {/* Only ever an error: the success path sets formCollapsed, which unmounts this form. */}
                 {listingMsg && <p className="text-center text-[10px] font-bold uppercase text-danger mt-2">{listingMsg}</p>}
               </form>
@@ -564,7 +615,16 @@ export default function Home() {
                     {/* BACK */}
                     <div className={`card-back glass p-4 md:p-5 rounded-2xl premium-shadow flex flex-col items-center justify-center text-center ${offer.id === bestValueId ? 'border border-brand/20' : 'border border-edge'}`}>
                       <p className="text-[8px] font-black text-ink-muted uppercase tracking-widest mb-3">Contact {offer.profiles?.first_name || "Seller"}</p>
-                      {offer.profiles?.contact_info ? (
+                      {previewing ? (
+                        /* Sample mode shows the shape of this screen without exposing a
+                           real student's email or phone number. Protecting that is the
+                           entire point of the WashU restriction. */
+                        <>
+                          <p className="text-base font-bold text-ink-faint break-all select-none blur-[5px]" aria-hidden="true">name@wustl.edu</p>
+                          <p className="text-[9px] font-bold text-danger uppercase tracking-widest mt-3">Hidden in sample mode</p>
+                          <p className="text-[10px] text-ink-muted mt-1 leading-snug">Sign in with a @wustl.edu email to see seller contact details.</p>
+                        </>
+                      ) : offer.profiles?.contact_info ? (
                         getContactHref(offer.profiles.contact_info) ? (
                           <a href={getContactHref(offer.profiles.contact_info)} className="text-base font-bold text-brand-ink hover:underline break-all">{offer.profiles.contact_info}</a>
                         ) : (

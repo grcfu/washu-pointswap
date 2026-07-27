@@ -88,9 +88,28 @@ create app registrations in WashU's own directory ("You don't have access").
 
 **Known limitation:** Google sign-in only works for students who created a Google account
 *on* their `@wustl.edu` address. Every existing user did, but that is survivorship bias —
-anyone without one cannot sign in at all, and there is no fallback. Fixing that properly
-means an email-based path (OTP code or magic link), which is the only delivery mechanism
-that reaches a Microsoft 365 mailbox.
+anyone without one cannot sign in at all. The proper fix is a **WashU Key SSO integration
+request** through the [WashU ServiceNow portal](https://it.washu.edu/servicenow/), which is
+WashU registering the app in their own tenant. An email OTP path would also work, since
+email is the only mechanism that reaches a Microsoft 365 mailbox; it was deliberately not
+built, to avoid depending on an SMTP provider.
+
+### Sample mode
+`demoMode` state, entered from a link in the login modal, derives
+`previewing = demoMode && !user`. It shows the signed-in interface to someone without a
+WashU account instead of a sign-in wall — mainly so the app is explorable by recruiters.
+
+It is **presentation only**. `user` stays `null`, so no session exists and every write is
+rejected by the server with a 401 regardless of the UI. `previewing` must never be used to
+gate a write; grep confirms it appears in no fetch path.
+
+Two non-obvious details that will break if changed carelessly:
+- **Seller contact details are masked.** The card back renders a blurred placeholder, not
+  the real value — the real string is never put in the DOM. Protecting seller contact info
+  is the entire purpose of the WashU restriction, and sample mode is enterable by anyone.
+- **The form gets `noValidate` in sample mode only.** Its inputs are `required`, so native
+  browser validation would block submit on the empty form, `handleSubmit` would never run,
+  and the "you need a WashU email" gate would be undiscoverable.
 
 ### Environment
 See `.env.example` and `frontend/.env.example` for the full list. Neither `.env` is committed.
