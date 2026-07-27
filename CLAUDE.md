@@ -124,8 +124,9 @@ Two gotchas worth knowing before editing:
 - **The theme is applied by an inline script in `layout.js`**, which must stay
   synchronous and in `<head>`: it sets `data-theme` before first paint so dark-mode
   visitors never see a flash of light. Deferring it or moving it into a component
-  reintroduces the flash. It reads `localStorage.pointswap_theme` first, then falls back
-  to the OS. `ThemeToggle` only reflects and writes that state; it decides nothing.
+  reintroduces the flash. **Dark is the default**; only an explicit `'light'` in
+  `localStorage.pointswap_theme` switches it, so the OS setting is intentionally
+  ignored. `ThemeToggle` only reads and writes that state; it decides nothing.
 
 ### Business Rules
 Validated on both the client (`handleSubmit`) and the server (`create_offer`) — keep them in sync:

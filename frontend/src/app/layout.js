@@ -37,14 +37,18 @@ export default function RootLayout({ children }) {
             icon1.png and apple-icon.png. */}
 
         {/*
-          Applies the theme before first paint, so a dark-mode visitor never sees a
-          flash of the light palette. Must stay synchronous and inline in <head>;
-          deferring it or moving it into a component would reintroduce the flash.
-          Reads a saved choice first, then falls back to the OS setting.
+          Applies the theme before first paint, so nobody sees a flash of the wrong
+          palette. Must stay synchronous and inline in <head>; deferring it or moving
+          it into a component would reintroduce the flash.
+
+          Dark is the default for first-time visitors regardless of their OS setting --
+          it is the intended look of the site. A saved choice from the toggle always
+          wins, in either direction. The catch falls back to dark too, so a storage
+          exception cannot silently flip the site to light.
         */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var s=localStorage.getItem('pointswap_theme');var d=s?s==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.dataset.theme=d?'dark':'light'}catch(e){document.documentElement.dataset.theme='light'}})()`,
+            __html: `(function(){try{var s=localStorage.getItem('pointswap_theme');document.documentElement.dataset.theme=s==='light'?'light':'dark'}catch(e){document.documentElement.dataset.theme='dark'}})()`,
           }}
         />
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-CZKEEEM2ZN"></script>
