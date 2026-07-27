@@ -44,7 +44,13 @@
   --color-brand-ink: #215732;
   --color-brand-ink-soft: #6d8f79;  /* value-scale middle tier */
 
-  --color-cream: #fdfbf9;
+  /*
+    Page base. Deliberately a pale green rather than off-white so light mode reads as
+    the same family as dark mode, which is green at every level. The paper texture in
+    body::before composites over this at 0.15 and deepens it further, so this value
+    looks greener in place than it does on its own.
+  */
+  --color-cream: #f1f6f2;
 
   /*
     Semantic surfaces and text. Light values are byte-for-byte what the Tailwind
@@ -58,24 +64,40 @@
   --color-ink: #101828;
   --color-ink-2: #1e2939;
   --color-ink-soft: #364153;
-  --color-ink-mid: #6a7282;
-  --color-ink-muted: #99a1af;
-  --color-ink-faint: #d1d5dc;
+  --color-ink-mid: #5c6b61;
+  /*
+    Secondary and tertiary text. These were Tailwind's grey-400 (#99a1af) and grey-300
+    (#d1d5dc), inherited from the original design, which measured 2.34:1 and 1.32:1
+    against the panel -- both well under the 4.5:1 needed for body text, so "by NAME"
+    and the timestamps were effectively unreadable. Darkened to pass AA and tinted
+    green so they belong to the palette instead of reading as grey on a green surface.
+    They are still the lightest steps in the scale; they are just legible now.
+  */
+  --color-ink-muted: #5f6f64;
+  --color-ink-faint: #77857b;
   --color-ink-strong: #000;
 
-  --color-line: #f3f4f6;
-  --color-line-2: #e5e7eb;
+  /* Dividers, tinted so they don't read as grey lines on a green surface */
+  --color-line: #e5efe8;
+  --color-line-2: #d6e6dc;
 
-  --color-panel: rgb(255 255 255 / 0.9);
-  --color-panel-strong: rgb(255 255 255 / 0.95);
-  --color-panel-solid: #fff;
-  --color-field: rgb(255 255 255 / 0.5);
+  /*
+    Surfaces. Green-tinted rather than white, but kept LIGHTER than --color-cream so
+    panels still read as raised above the page; that separation is what makes the
+    glassmorphism work, and flattening it makes cards disappear into the background.
+  */
+  --color-panel: rgb(236 245 239 / 0.92);
+  --color-panel-strong: rgb(236 245 239 / 0.97);
+  --color-panel-solid: #ecf5ef;
+  --color-field: rgb(230 241 234 / 0.6);
   --color-scrim: rgb(255 255 255 / 0.1);
+  /* Edges stay white: the bright rim is the glass highlight, and tinting it green
+     turns the frosted effect muddy. */
   --color-edge: rgb(255 255 255 / 0.6);
   --color-edge-soft: rgb(255 255 255 / 0.4);
-  --color-edge-solid: #fff;
-  --color-subtle: #f3f4f6;
-  --color-subtle-2: #e5e7eb;
+  --color-edge-solid: rgb(255 255 255 / 0.85);
+  --color-subtle: #e7f0ea;
+  --color-subtle-2: #d9e8df;
 
   /* High-contrast inverse buttons (Sign in, Contact) */
   --color-inverse: #101828;
