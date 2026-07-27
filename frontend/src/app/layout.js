@@ -33,7 +33,20 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} h-full antialiased`}>
       <head>
-        {/* No manual icon link: Next.js injects one from src/app/icon.svg. */}
+        {/* No manual icon link: Next.js injects them from src/app/icon0.svg,
+            icon1.png and apple-icon.png. */}
+
+        {/*
+          Applies the theme before first paint, so a dark-mode visitor never sees a
+          flash of the light palette. Must stay synchronous and inline in <head>;
+          deferring it or moving it into a component would reintroduce the flash.
+          Reads a saved choice first, then falls back to the OS setting.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=localStorage.getItem('pointswap_theme');var d=s?s==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.dataset.theme=d?'dark':'light'}catch(e){document.documentElement.dataset.theme='light'}})()`,
+          }}
+        />
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-CZKEEEM2ZN"></script>
         <script dangerouslySetInnerHTML={{ __html: `
           window.dataLayer = window.dataLayer || [];

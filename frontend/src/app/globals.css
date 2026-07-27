@@ -87,62 +87,70 @@
 
 /*
   Dark theme. Only token values change -- no markup, no duplicated rules.
-  Follows the OS setting; there is no in-app toggle.
+
+  Keyed on [data-theme="dark"] rather than a prefers-color-scheme media query so
+  an explicit user choice can override the OS in both directions. The attribute is
+  set by an inline script in layout.js before first paint: it reads the saved
+  preference, falls back to the OS setting, and so avoids a flash of the wrong
+  theme. Defining the palette once here means there is no duplicated block to keep
+  in sync between "OS says dark" and "user chose dark".
 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-brand: #2c7043;
-    --brand-rgb: 44 112 67;
-    --color-brand-ink: #7fc99a;
-    --color-brand-ink-soft: #4e7d5e;
-    --color-brand-tint: #1b3325;
-    --color-brand-ring: #24422f;
-    --color-brand-hover: #3d8c56;
+:root[data-theme='dark'] {
+  /* Tells the browser to render form controls, scrollbars and caret dark too. */
+  color-scheme: dark;
 
-    --color-danger: #f87171;
-    --color-danger-tint: #2a1718;
-    --color-danger-ring: #3a1e1f;
-    --color-accent: #e26d6f;
+  --color-brand: #2c7043;
+  --brand-rgb: 44 112 67;
+  --color-brand-ink: #7fc99a;
+  --color-brand-ink-soft: #4e7d5e;
+  --color-brand-tint: #1b3325;
+  --color-brand-ring: #24422f;
+  --color-brand-hover: #3d8c56;
 
-    /* Doubles as the page background and the bear's facial features, which
-       should read dark against a brand-green bear in either theme. */
-    --color-cream: #111b15;
+  --color-danger: #f87171;
+  --color-danger-tint: #2a1718;
+  --color-danger-ring: #3a1e1f;
+  --color-accent: #e26d6f;
 
-    --color-ink: #e8e6e3;
-    --color-ink-2: #dcdad7;
-    --color-ink-soft: #c6c4c1;
-    --color-ink-mid: #a8a6a3;
-    --color-ink-muted: #99a1af;
-    --color-ink-faint: #6a737f;
-    --color-ink-strong: #fff;
+  /* Doubles as the page background and the bear's facial features, which
+     should read dark against a brand-green bear in either theme. */
+  --color-cream: #111b15;
 
-    --color-line: rgb(255 255 255 / 0.1);
-    --color-line-2: rgb(255 255 255 / 0.14);
+  --color-ink: #e8e6e3;
+  --color-ink-2: #dcdad7;
+  --color-ink-soft: #c6c4c1;
+  --color-ink-mid: #a8a6a3;
+  --color-ink-muted: #99a1af;
+  --color-ink-faint: #6a737f;
+  --color-ink-strong: #fff;
 
-    --color-panel: rgb(24 37 29 / 0.9);
-    --color-panel-strong: rgb(24 37 29 / 0.96);
-    --color-panel-solid: #18251d;
-    --color-field: rgb(255 255 255 / 0.05);
-    --color-scrim: rgb(0 0 0 / 0.45);
-    --color-edge: rgb(255 255 255 / 0.1);
-    --color-edge-soft: rgb(255 255 255 / 0.07);
-    --color-edge-solid: rgb(255 255 255 / 0.12);
-    --color-subtle: rgb(255 255 255 / 0.08);
-    --color-subtle-2: rgb(255 255 255 / 0.14);
+  --color-line: rgb(255 255 255 / 0.1);
+  --color-line-2: rgb(255 255 255 / 0.14);
 
-    --color-inverse: #e8e6e3;
-    --color-inverse-hover: #fff;
-    --color-on-inverse: #111b15;
+  --color-panel: rgb(24 37 29 / 0.9);
+  --color-panel-strong: rgb(24 37 29 / 0.96);
+  --color-panel-solid: #18251d;
+  --color-field: rgb(255 255 255 / 0.05);
+  --color-scrim: rgb(0 0 0 / 0.45);
+  --color-edge: rgb(255 255 255 / 0.1);
+  --color-edge-soft: rgb(255 255 255 / 0.07);
+  --color-edge-solid: rgb(255 255 255 / 0.12);
+  --color-subtle: rgb(255 255 255 / 0.08);
+  --color-subtle-2: rgb(255 255 255 / 0.14);
 
-    /* Plain-CSS helpers used by .glass, .skeleton and .ripple below */
-    --glass-border: rgb(255 255 255 / 0.08);
-    --skeleton-a: rgb(255 255 255 / 0.05);
-    --skeleton-b: rgb(255 255 255 / 0.1);
-    --ripple-tint: rgb(255 255 255 / 0.18);
-  }
+  --color-inverse: #e8e6e3;
+  --color-inverse-hover: #fff;
+  --color-on-inverse: #111b15;
+
+  /* Plain-CSS helpers used by .glass, .skeleton and .ripple below */
+  --glass-border: rgb(255 255 255 / 0.08);
+  --skeleton-a: rgb(255 255 255 / 0.05);
+  --skeleton-b: rgb(255 255 255 / 0.1);
+  --ripple-tint: rgb(255 255 255 / 0.18);
 }
 
 :root {
+  color-scheme: light;
   /* rgb triplet of --color-brand, for rgb(... / alpha) in plain CSS below */
   --brand-rgb: 33 87 50;
   --bg-cream: var(--color-cream);
@@ -199,6 +207,23 @@ body::after {
 
 .serif {
   font-family: var(--font-lora), serif;
+}
+
+/*
+  ThemeToggle renders both icons; CSS shows one. Keeping the swap in CSS rather than
+  React state means server and client render identical markup, so the toggle needs
+  no mounted flag and no effect.
+*/
+.theme-icon-sun {
+  display: none;
+}
+
+:root[data-theme='dark'] .theme-icon-moon {
+  display: none;
+}
+
+:root[data-theme='dark'] .theme-icon-sun {
+  display: block;
 }
 
 .glass {

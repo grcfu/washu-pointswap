@@ -118,9 +118,14 @@ Two gotchas worth knowing before editing:
 - **Opacity modifiers bake the hex.** `bg-white/90` compiles to `#ffffffe6`, not a live
   `var()`, so a runtime override cannot reach it. That is why translucent surfaces are
   tokens with the alpha folded in (`--color-panel: rgb(255 255 255 / 0.9)`).
-- **Dark mode** is one `@media (prefers-color-scheme: dark)` block that reassigns tokens.
-  There is no toggle and no `dark:` variants. Adding a hardcoded color breaks it silently.
+- **Dark mode** is one `:root[data-theme='dark']` block that reassigns tokens. There are
+  no `dark:` variants anywhere, so adding a hardcoded color breaks the theme silently.
   Contrast was measured, not guessed — keep new pairs at AA or better.
+- **The theme is applied by an inline script in `layout.js`**, which must stay
+  synchronous and in `<head>`: it sets `data-theme` before first paint so dark-mode
+  visitors never see a flash of light. Deferring it or moving it into a component
+  reintroduces the flash. It reads `localStorage.pointswap_theme` first, then falls back
+  to the OS. `ThemeToggle` only reflects and writes that state; it decides nothing.
 
 ### Business Rules
 Validated on both the client (`handleSubmit`) and the server (`create_offer`) — keep them in sync:

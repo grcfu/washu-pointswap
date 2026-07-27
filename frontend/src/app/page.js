@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import BearMark from '../components/BearMark';
+import ThemeToggle from '../components/ThemeToggle';
 
 // Same-origin route handlers in src/app/api — no CORS, no separate backend host.
 // Override only to point at the optional FastAPI app in backend/ instead.
@@ -315,6 +316,7 @@ export default function Home() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <button onClick={() => setShowHelp(true)} className="px-5 py-2 bg-brand text-white text-[9px] font-black uppercase tracking-widest rounded-full hover:bg-brand-hover transition-all ripple">How it works</button>
             {user ? (
               <button onClick={() => setShowProfile(true)} className="w-10 h-10 glass rounded-full flex items-center justify-center premium-shadow hover:scale-110 transition-all ripple">👤</button>
