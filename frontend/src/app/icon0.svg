@@ -1,9 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
   <!--
-    Browser tab icon. Geometry mirrors src/components/BearMark.jsx; keep the two
-    in sync. Colors are literal here rather than var(--color-brand) because a
-    favicon is loaded as a standalone document and inherits no page CSS.
-    Brand green #215732, cream #fdfbf9.
+    Browser tab icon. Geometry mirrors src/components/BearMark.jsx; keep the two in
+    sync. Colors are hardcoded rather than CSS custom properties because a favicon
+    loads as a standalone document and inherits no page CSS.
+    Brand green #215732 on cream #fdfbf9.
+
+    NB: this is parsed as strict XML, so a comment must never contain a double
+    hyphen. Writing a CSS variable name in here is enough to break the whole file.
   -->
   <rect width="100" height="100" rx="22" fill="#215732"/>
   <circle cx="50" cy="54" r="26" fill="#fdfbf9"/>
