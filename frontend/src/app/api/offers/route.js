@@ -6,10 +6,14 @@ import { MIN_AMOUNT, MAX_AMOUNT, MAX_PRICE_PER_POINT } from '@/lib/offerRules'
 // Route handlers are not cached by default in Next.js 16, so listings are always live.
 export async function GET() {
   try {
+    // Removed listings are kept as rows with `deleted_at` set (see the delete
+    // route), so every read of the live marketplace has to exclude them. Miss this
+    // filter and pulled listings reappear on the site.
     const { data, error } = await supabaseServer
       .from('offers')
       .select('*, profiles(first_name, last_name, contact_info)')
       .eq('status', 'active')
+      .is('deleted_at', null)
 
     if (error) throw new ApiError(500, error.message)
     return Response.json(data)

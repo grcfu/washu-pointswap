@@ -69,9 +69,24 @@ already drifted: it does **not** enforce the `@wustl.edu` restriction. Its commi
 - **Important:** Next.js 16 has breaking changes vs. prior versions. Check `node_modules/next/dist/docs/` before using Next.js APIs.
 
 ### Database (Supabase)
-- **offers**: id, seller_id, amount, price_per_point, status (active/inactive)
+- **offers**: id, seller_id, amount, price_per_point, status (active/inactive), created_at,
+  deleted_at
 - **profiles**: id, email, first_name, last_name, contact_info, updated_at
 - Relationship: `offers.seller_id` → `profiles.id`
+- Migrations live in `db/migrations/`, applied by hand in the Supabase SQL editor. There is
+  no migration tool and no service-role key here — the app runs on the anon key, so schema
+  changes cannot be automated from code.
+
+**Offers are soft-deleted.** Removing a listing sets `deleted_at`; the row survives, which
+is what preserves the price it was listed at. Removal used to be a hard `DELETE`, so a
+seller pulling an offer destroyed the only record it ever existed, and the marketplace
+could never answer what points actually sold for.
+
+Every read of the live marketplace must filter `.is('deleted_at', null)` — miss it and
+pulled listings reappear on the site. `status = 'active'` is **not** sufficient on its own.
+The pair is covered by `offers_live_idx`. The delete route additionally requires
+`deleted_at` to still be null, so a repeat removal 404s instead of overwriting the original
+removal time.
 
 ### Auth
 Google OAuth only, via `supabase.auth.signInWithOAuth({ provider: 'google' })`, redirecting
