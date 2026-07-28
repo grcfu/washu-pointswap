@@ -3,6 +3,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import BearMark from '../components/BearMark';
 import ThemeToggle from '../components/ThemeToggle';
+import {
+  MIN_AMOUNT,
+  MAX_AMOUNT,
+  MAX_PRICE_PER_POINT,
+  FALLBACK_AMOUNT,
+  FALLBACK_PRICE_PER_POINT,
+  median,
+} from '../lib/offerRules';
 
 // Same-origin route handlers in src/app/api — no CORS, no separate backend host.
 // Override only to point at the optional FastAPI app in backend/ instead.
@@ -175,6 +183,21 @@ export default function Home() {
     - Below three listings there is no meaningful spread to compare, so the scale
       switches off rather than implying a ranking that does not exist.
   */
+  /*
+    Form example values, derived from the live market rather than fixed.
+
+    The old hardcoded 500 points for $350 implied $0.70 per point -- 3.5x the median
+    of real listings and above every one of them. Placeholders read as guidance, so
+    that quietly anchored new sellers into overpricing, and an overpriced listing just
+    sits there. Using the median of what is actually on the marketplace keeps the
+    example honest and moves with it. Falls back to constants only when there is
+    nothing to derive from.
+  */
+  const marketAmount = median(offers.map(o => o.amount)) ?? FALLBACK_AMOUNT;
+  const marketPricePerPoint = median(offers.map(o => o.price_per_point)) ?? FALLBACK_PRICE_PER_POINT;
+  const amountPlaceholder = String(Math.round(marketAmount));
+  const pricePlaceholder = String(Math.round(marketAmount * marketPricePerPoint));
+
   const visiblePrices = filteredOffers.map(o => o.price_per_point);
   const cheapest = visiblePrices.length ? Math.min(...visiblePrices) : 0;
   const priciest = visiblePrices.length ? Math.max(...visiblePrices) : 0;
@@ -259,16 +282,16 @@ export default function Home() {
     }
     const parsedAmount = parseInt(amount);
     const parsedPrice = parseFloat(price);
-    if (parsedAmount < 100 || parsedAmount > 500) {
-      setListingMsg('Amount must be between 100 and 500.');
+    if (parsedAmount < MIN_AMOUNT || parsedAmount > MAX_AMOUNT) {
+      setListingMsg(`Amount must be between ${MIN_AMOUNT} and ${MAX_AMOUNT}.`);
       return;
     }
     if (!parsedPrice || parsedPrice <= 0) {
       setListingMsg('Price must be greater than $0.');
       return;
     }
-    if (parsedPrice / parsedAmount > 3) {
-      setListingMsg('Price cannot exceed $3.00 per point.');
+    if (parsedPrice / parsedAmount > MAX_PRICE_PER_POINT) {
+      setListingMsg(`Price cannot exceed $${MAX_PRICE_PER_POINT.toFixed(2)} per point.`);
       return;
     }
     setPosting(true);
@@ -415,7 +438,7 @@ export default function Home() {
                 <span className="w-10 h-10 md:w-12 md:h-12 bg-brand-tint text-brand-ink rounded-full flex items-center justify-center text-base md:text-lg font-bold shrink-0">2</span>
                 <div>
                   <p className="text-base md:text-lg font-bold text-ink-2">Sell your points</p>
-                  <p className="text-sm md:text-base text-ink-muted mt-1 leading-relaxed">Sign in with your WashU account, fill in your name, contact info, how many points you have (100–500), and your total asking price. Your listing goes live instantly.</p>
+                  <p className="text-sm md:text-base text-ink-muted mt-1 leading-relaxed">Sign in with your WashU account, fill in your name, contact info, how many points you have ({MIN_AMOUNT}–{MAX_AMOUNT}), and your total asking price. Your listing goes live instantly.</p>
                 </div>
               </div>
               <div className="flex gap-5 items-start">
@@ -469,13 +492,13 @@ export default function Home() {
                 </div>
                 <div className="border-t border-line pt-6">
                   <label className="text-label font-black text-ink-muted uppercase tracking-[0.2em] mb-2 block ml-1">Quantity</label>
-                  <input type="number" min="100" max="500" placeholder="500" className="w-full bg-field border border-line rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand-ring transition-all font-sans text-lg" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+                  <input type="number" min={MIN_AMOUNT} max={MAX_AMOUNT} placeholder={amountPlaceholder} className="w-full bg-field border border-line rounded-2xl p-4 outline-none focus:ring-2 focus:ring-brand-ring transition-all font-sans text-lg" value={amount} onChange={(e) => setAmount(e.target.value)} required />
                 </div>
                 <div>
                   <label className="text-label font-black text-ink-muted uppercase tracking-[0.2em] mb-2 block ml-1">Total price</label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-muted serif">$</span>
-                    <input type="number" step="0.01" min="0.01" placeholder="350" className="w-full bg-field border border-line rounded-2xl p-4 pl-8 outline-none focus:ring-2 focus:ring-brand-ring transition-all font-sans text-lg" value={price} onChange={(e) => setPrice(e.target.value)} required />
+                    <input type="number" step="0.01" min="0.01" placeholder={pricePlaceholder} className="w-full bg-field border border-line rounded-2xl p-4 pl-8 outline-none focus:ring-2 focus:ring-brand-ring transition-all font-sans text-lg" value={price} onChange={(e) => setPrice(e.target.value)} required />
                   </div>
                 </div>
                 {perPointPreview && (

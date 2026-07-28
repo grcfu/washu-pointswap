@@ -1,9 +1,7 @@
 import { supabaseServer, getCurrentUser, errorResponse, ApiError } from '@/lib/apiAuth'
-
-// Keep these in sync with the client-side checks in page.js and with CLAUDE.md.
-const MIN_AMOUNT = 100
-const MAX_AMOUNT = 500
-const MAX_PRICE_PER_POINT = 3
+// Shared with the client form, so the two cannot drift apart. This route is the
+// authority; the client copies only provide immediate feedback.
+import { MIN_AMOUNT, MAX_AMOUNT, MAX_PRICE_PER_POINT } from '@/lib/offerRules'
 
 // Route handlers are not cached by default in Next.js 16, so listings are always live.
 export async function GET() {
@@ -42,7 +40,7 @@ export async function POST(request) {
       throw new ApiError(400, 'Price must be greater than 0')
     }
     if (price > MAX_PRICE_PER_POINT) {
-      throw new ApiError(400, 'Price cannot exceed $3.00 per point')
+      throw new ApiError(400, `Price cannot exceed $${MAX_PRICE_PER_POINT.toFixed(2)} per point`)
     }
 
     // supabase-js returns no rows from insert unless .select() is chained.

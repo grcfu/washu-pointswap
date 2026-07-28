@@ -184,13 +184,25 @@ Two gotchas worth knowing before editing:
   ignored. `ThemeToggle` only reads and writes that state; it decides nothing.
 
 ### Business Rules
-Validated on both the client (`handleSubmit`) and the server (`create_offer`) — keep them in sync:
-- Offer amount: 100–500 MarketPoints
-- Price must be > $0 and ≤ $3.00 per point
+The limits live in **`frontend/src/lib/offerRules.js`** and are imported by both the client
+form and the API route. Change them there and nowhere else — they used to be bare literals
+in nine places across the two, which meant the form could accept a value the server then
+rejected with a 400. The route handler remains the authority; the client checks only give
+immediate feedback.
+
+- Offer amount: `MIN_AMOUNT`–`MAX_AMOUNT` (100–500 MarketPoints)
+- Price must be > $0 and ≤ `MAX_PRICE_PER_POINT` ($3.00) per point
 - The seller enters a **total** price; the frontend divides by `amount` and sends per-point
 - Contact info must be a valid email or phone number (client-side only)
 - Sellers can only delete their own offers
 - Best-value badge highlights the lowest price-per-point offer
+
+**Form example values are derived, not fixed.** The quantity and price placeholders come
+from the median of the live listings (`median()` in `offerRules.js`), falling back to
+`FALLBACK_AMOUNT` / `FALLBACK_PRICE_PER_POINT` only when the marketplace is empty. Do not
+replace them with literals: the previous hardcoded "500 points for $350" implied $0.70 per
+point, 3.5× the real median and above every listing on the site, so the first thing a new
+seller saw pushed them toward a price that would never sell.
 
 ### Deployment
 Everything ships as **one Vercel project** (`washu-pointswap.vercel.app`): the static
