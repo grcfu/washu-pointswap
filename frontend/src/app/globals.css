@@ -13,6 +13,36 @@
 */
 @theme {
   /*
+    Fluid type scale. Every step interpolates between a phone (375px) and a large
+    laptop (1440px), so text grows with the viewport instead of staying pinned at a
+    size chosen for a small window. Body text lands at ~20px on a 15" MacBook.
+
+    These override Tailwind's own text-xs/sm/base/... so existing markup picks them up
+    with no class changes. Deliberately NOT done by scaling the root font size: Tailwind
+    spacing is rem-based, so that would zoom padding, widths and the grid as well and
+    break the card layout.
+
+    micro/tiny/label replace the old text-[7px] … text-[11px] arbitrary values. They are
+    still small because they are uppercase, letter-spaced badge and button labels — at
+    20px those stop being labels and wreck the card grid — but the floor is now 11-13px
+    instead of 7-9px.
+  */
+  --text-micro: clamp(0.6875rem, 0.644rem + 0.188vw, 0.8125rem);   /* 11 → 13 */
+  --text-tiny: clamp(0.75rem, 0.695rem + 0.235vw, 0.906rem);       /* 12 → 14.5 */
+  --text-label: clamp(0.8125rem, 0.747rem + 0.282vw, 1rem);        /* 13 → 16 */
+
+  --text-xs: clamp(0.844rem, 0.778rem + 0.282vw, 1.031rem);        /* 13.5 → 16.5 */
+  --text-sm: clamp(0.9375rem, 0.872rem + 0.282vw, 1.125rem);       /* 15 → 18 */
+  --text-base: clamp(1.0625rem, 0.986rem + 0.329vw, 1.281rem);     /* 17 → 20.5 */
+  --text-lg: clamp(1.1875rem, 1.1rem + 0.376vw, 1.4375rem);        /* 19 → 23 */
+  --text-xl: clamp(1.3125rem, 1.225rem + 0.376vw, 1.5625rem);      /* 21 → 25 */
+  --text-2xl: clamp(1.5rem, 1.368rem + 0.563vw, 1.875rem);         /* 24 → 30 */
+  --text-3xl: clamp(1.75rem, 1.574rem + 0.751vw, 2.25rem);         /* 28 → 36 */
+  --text-4xl: clamp(2.125rem, 1.905rem + 0.939vw, 2.75rem);        /* 34 → 44 */
+  --text-5xl: clamp(2.625rem, 2.317rem + 1.315vw, 3.5rem);         /* 42 → 56 */
+  --text-6xl: clamp(3.125rem, 2.729rem + 1.69vw, 4.25rem);         /* 50 → 68 */
+
+  /*
     WashU's official palette is green AND red. Green leads because red reads as
     "loss" in a financial context, which is the wrong signal on a marketplace.
     Verify this hex against WashU's brand guidelines before shipping widely.

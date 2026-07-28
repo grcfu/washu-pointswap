@@ -94,22 +94,34 @@ WashU registering the app in their own tenant. An email OTP path would also work
 email is the only mechanism that reaches a Microsoft 365 mailbox; it was deliberately not
 built, to avoid depending on an SMTP provider.
 
-### Sample mode
-`demoMode` state, entered from a link in the login modal, derives
-`previewing = demoMode && !user`. It shows the signed-in interface to someone without a
-WashU account instead of a sign-in wall — mainly so the app is explorable by recruiters.
+### Signed-out preview
+`previewing = !user`. Signed-out visitors see the **full interface** — listing form,
+cards, card-flip — rather than a sign-in wall, so the app is explorable by anyone.
+Sign-in is requested at the point of action instead: **Post Offer** and the masked
+contact card both open the login modal.
 
-It is **presentation only**. `user` stays `null`, so no session exists and every write is
-rejected by the server with a 401 regardless of the UI. `previewing` must never be used to
-gate a write; grep confirms it appears in no fetch path.
+It is **presentation only**. With `user` null there is no session, so every write is
+rejected server-side with a 401 regardless of the UI. `previewing` must never gate a
+write; it appears in no fetch path.
 
 Two non-obvious details that will break if changed carelessly:
 - **Seller contact details are masked.** The card back renders a blurred placeholder, not
   the real value — the real string is never put in the DOM. Protecting seller contact info
-  is the entire purpose of the WashU restriction, and sample mode is enterable by anyone.
-- **The form gets `noValidate` in sample mode only.** Its inputs are `required`, so native
+  is the entire purpose of the WashU restriction, and this view is public.
+- **The form gets `noValidate` while signed out.** Its inputs are `required`, so native
   browser validation would block submit on the empty form, `handleSubmit` would never run,
-  and the "you need a WashU email" gate would be undiscoverable.
+  and clicking Post Offer would do nothing instead of prompting sign-in.
+
+### Typography
+A **fluid scale** in `@theme` interpolates every step between a 375px phone and a 1440px
+laptop, so text grows with the viewport; body text lands at ~20px on a 15" MacBook.
+`--text-xs` … `--text-6xl` override Tailwind's own values, so existing classes pick them
+up with no markup change. `--text-micro` / `--text-tiny` / `--text-label` replace the old
+`text-[7px]` … `text-[11px]` arbitrary values — never reintroduce a hardcoded px size.
+
+Deliberately **not** done by scaling the root font size: Tailwind spacing is rem-based, so
+that would zoom padding, widths and the grid too and break the card layout. Verified no
+horizontal overflow at 390px or 1440px.
 
 ### Environment
 See `.env.example` and `frontend/.env.example` for the full list. Neither `.env` is committed.
