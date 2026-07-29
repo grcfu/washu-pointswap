@@ -15,7 +15,7 @@ WashU Pointswap solves the "end-of-semester balance" problem by providing a secu
 ## 📸 Visuals
 | Marketplace View | How it Works | Auth Constraints |
 | :---: | :---: | :---: |
-| <img src="https://github.com/user-attachments/assets/6dbddb4e-949f-4016-a6b4-4c177cc82fdb" width="100%"> | <img src="https://github.com/user-attachments/assets/745d5e3c-3a44-4165-a843-5f6d6d6709fb" width="100%"> | <img src="https://github.com/user-attachments/assets/bd0a03e6-d530-4f52-9ab6-453afadb49a8" width="100%"> |
+| <img src="https://github.com/user-attachments/assets/5aa39f03-7b43-467e-9949-deb5e18dc48e" alt="Marketplace View" width="100%"> | <img src="https://github.com/user-attachments/assets/10a182ae-99b5-45a0-a805-e8b5c58897ac" alt="How it Works" width="100%"> | <img src="https://github.com/user-attachments/assets/875bbca4-c312-4afb-834c-66cb4195c9c3" alt="Auth Constraints" width="100%"> |
 
 ## 🛠️ Tech Stack
 ### **Frontend**
