@@ -33,6 +33,20 @@ alive. Shared helpers live in `frontend/src/lib/apiAuth.js`.
 - `POST /api/offers/{offerId}/delete` — hard-delete an offer
 - `GET /api/health` — reads one row from `offers`; ping it to keep Supabase awake
 
+**Every write must use the client `getCurrentUser` returns, never `supabaseServer`.**
+It returns `{ userId, supabase }`, where `supabase` is a per-request client carrying the
+caller's access token. RLS on `offers` and `profiles` grants insert to the `authenticated`
+role only, and the anon key alone authenticates as `anon` — so a write through the shared
+`supabaseServer` is refused with `42501 new row violates row-level security policy`
+whoever the caller is. The client is returned rather than the bare token precisely so a
+caller cannot forget to bind it.
+
+That bug shipped and was silent for four months: `POST /api/offers` failed for every user
+from the route-handler migration until 2026-08-28, and no listing was created between
+2026-04-21 and then. Reads are public and unaffected, so the site looked healthy while
+writes were dead. Reads deliberately stay on `supabaseServer` — a user-scoped client
+there would hide listings from signed-out visitors.
+
 Writes call `getCurrentUser(request)`, which requires an
 `Authorization: Bearer <supabase_access_token>` header, verifies it via
 `supabase.auth.getUser(token)`, and then rejects any account whose email is not
@@ -73,6 +87,15 @@ already drifted: it does **not** enforce the `@wustl.edu` restriction. Its commi
   deleted_at
 - **profiles**: id, email, first_name, last_name, contact_info, updated_at
 - Relationship: `offers.seller_id` → `profiles.id`
+- RLS policies were created by hand in the dashboard and are **not** fully captured in
+  `db/migrations/`. `002_write_policies.sql` adds the owner-scoped insert/update policies
+  that were missing; older permissive ones predate any migration. Inspect the live set
+  with `select tablename, policyname, cmd, roles, qual, with_check from pg_policies where
+  schemaname = 'public'` rather than trusting the files. Two loose ones remain on
+  `offers`: a blanket `with_check (true)` INSERT policy letting any signed-in user forge
+  `seller_id`, and `offers_soft_delete`, an UPDATE policy for `{public}` with
+  `using (true)`, letting any signed-in user edit or pull anyone's listing. `anon` is
+  blocked from both by table-level grants, so the exposure is to authenticated users.
 - Migrations live in `db/migrations/`, applied by hand in the Supabase SQL editor. There is
   no migration tool and no service-role key here — the app runs on the anon key, so schema
   changes cannot be automated from code.
@@ -89,25 +112,40 @@ The pair is covered by `offers_live_idx`. The delete route additionally requires
 removal time.
 
 ### Auth
-Google OAuth only, via `supabase.auth.signInWithOAuth({ provider: 'google' })`, redirecting
-to `window.location.origin`. Browsing is public; posting and deleting require a
+Two providers, via `supabase.auth.signInWithOAuth`: **WashU Key (Microsoft Entra ID)** as
+`provider: 'azure'` — the primary — and Google as a fallback. Both redirect to
+`window.location.origin`. Browsing is public; posting and deleting require a
 `@wustl.edu` account, enforced server-side in `getCurrentUser` (see the API section) —
 the provider itself is not the security boundary.
 
-**Do not add Microsoft Entra ID.** It looks like the obvious fix, because WashU mailboxes
-are Microsoft 365 and not Google Workspace, but WashU's tenant blocks user consent for
-third-party multi-tenant apps. A `@wustl.edu` account signing into any such app gets
-"Need admin approval" — verified July 2026 against Notion, a far larger vendor than this
-project. It would need a WashU IT exception, not a code change. Relatedly, students cannot
-create app registrations in WashU's own directory ("You don't have access").
+**Entra is now usable, and the history matters.** It was previously impossible: WashU's
+tenant blocks user consent for third-party multi-tenant apps, so a `@wustl.edu` account
+signing into one got "Need admin approval" (verified July 2026 against Notion). That was
+never fixable in code. It was resolved in **August 2026** by WUIT registering the app and
+granting consent through the **WUIT-AppConsent-WashU-Pointswap** group. That group is the
+real gate: a student who is not in it still hits the admin-approval wall, so sign-in
+failures are an access-request problem, not a bug. Students still cannot create their own
+app registrations in WashU's directory ("You don't have access").
 
-**Known limitation:** Google sign-in only works for students who created a Google account
-*on* their `@wustl.edu` address. Every existing user did, but that is survivorship bias —
-anyone without one cannot sign in at all. The proper fix is a **WashU Key SSO integration
-request** through the [WashU ServiceNow portal](https://it.washu.edu/servicenow/), which is
-WashU registering the app in their own tenant. An email OTP path would also work, since
-email is the only mechanism that reaches a Microsoft 365 mailbox; it was deliberately not
-built, to avoid depending on an SMTP provider.
+Two non-obvious constraints on the Entra path:
+- `scopes: 'openid profile email'` is **required**. Entra omits the email claim without
+  it, and email is what every `@wustl.edu` check reads — client and server.
+- There is **no custom provider identifier**. `signInWithOAuth` accepts a fixed enum
+  (`'apple' | 'azure' | … | 'google' | …`), so a `'washu'` provider string does not
+  exist and is rejected. The WashU tenant is configured dashboard-side on Supabase's
+  Azure provider. A custom identifier exists only on the SSO/SAML path
+  (`signInWithSSO`), which is a paid Supabase feature and is not what this uses.
+
+**Do not add an `/auth/callback` route to `redirectTo`.** No such route exists, and the
+browser client's `detectSessionInUrl` already exchanges the code on whatever page the
+redirect lands on. Pointing at the path 404s mid-login.
+
+**Google is kept on purpose — do not delete the button as cleanup.** Supabase issues a
+distinct user for an unlinked identity, and `offers.seller_id` references that id, so
+removing Google would orphan the listings and profile of every seller who signed up
+through it. Remove it only once those accounts are linked or retired. Google-only also
+had a real cost worth remembering: it worked only for students who had created a Google
+account *on* their `@wustl.edu` address, which the Entra path finally fixes.
 
 ### Signed-out preview
 `previewing = !user`. Signed-out visitors see the **full interface** — listing form,

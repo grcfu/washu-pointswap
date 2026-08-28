@@ -18,6 +18,29 @@ export const supabaseServer = createClient(supabaseUrl, supabaseKey, {
   auth: { persistSession: false, autoRefreshToken: false },
 })
 
+/*
+  A client that acts as the calling user rather than as `anon`.
+
+  Required for every write. RLS on `offers` and `profiles` grants insert to the
+  `authenticated` role only, and the anon key alone authenticates as `anon`, so an
+  insert through `supabaseServer` is rejected with 42501 "new row violates row-level
+  security policy" no matter who the caller is. Attaching the caller's access token is
+  what makes `auth.uid()` resolve inside the policy.
+
+  Built per request, never shared: a module-level client with a user's token baked into
+  its headers would apply that identity to whatever request the same warm serverless
+  instance handled next.
+
+  Reads stay on `supabaseServer` -- the marketplace is public, and going through a user
+  client there would make listings vanish for signed-out visitors.
+*/
+export function supabaseAsUser(token) {
+  return createClient(supabaseUrl, supabaseKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  })
+}
+
 // `detail` matches FastAPI's error shape, which is what page.js already reads.
 export class ApiError extends Error {
   constructor(status, detail) {
@@ -33,8 +56,9 @@ export class ApiError extends Error {
 // out, but that is only UX — a browser-side check is not an authorization boundary.
 const ALLOWED_EMAIL_DOMAIN = '@wustl.edu'
 
-// Verify the Supabase access token, confirm the account is WashU, and return its id.
-// Every write path goes through here, so the restriction fails closed by default.
+// Verify the Supabase access token, confirm the account is WashU, and return the
+// caller's id together with a client acting as them. Every write path goes through
+// here, so the restriction fails closed by default.
 export async function getCurrentUser(request) {
   const authHeader = request.headers.get('authorization')
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -61,7 +85,9 @@ export async function getCurrentUser(request) {
     throw new ApiError(403, `Only ${ALLOWED_EMAIL_DOMAIN} accounts can post or remove listings.`)
   }
 
-  return data.user.id
+  // `supabase` is returned rather than just the token so a caller cannot forget to
+  // bind it and silently fall back to an anon client that RLS will reject.
+  return { userId: data.user.id, supabase: supabaseAsUser(token) }
 }
 
 export function errorResponse(err) {

@@ -31,7 +31,12 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} h-full antialiased`}>
+    // suppressHydrationWarning is required, not cosmetic: the theme script below sets
+    // data-theme on this element before React hydrates, so the client always has an
+    // attribute the server never rendered. The warning is the expected consequence of
+    // painting the right theme first. It suppresses only this element's own
+    // attributes, not anything inside it, so a real mismatch in the tree still warns.
+    <html lang="en" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} h-full antialiased`}>
       <head>
         {/* No manual icon link: Next.js injects them from src/app/icon0.png (32px),
             icon1.png (180px) and apple-icon.png. */}

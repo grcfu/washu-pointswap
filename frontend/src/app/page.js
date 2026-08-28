@@ -100,6 +100,28 @@ export default function Home() {
     return session.user;
   };
 
+  /*
+    A failed provider handoff comes back as ?error=...&error_description=... on this
+    page, not as an exception from signInWithOAuth -- the redirect already happened, so
+    there is nothing left to reject. Unread, a failure is indistinguishable from a
+    cancelled login: the visitor lands on the home page, still signed out, with no
+    explanation. Entra's messages carry the actual cause (a misconfigured tenant, an
+    unconsented app), so they are worth showing rather than swallowing.
+
+    The params are stripped afterwards so a reload does not resurrect a stale error.
+  */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const err = params.get('error_description') || params.get('error');
+    if (err) {
+      setLoginMsg(err);
+      setShowLogin(true);
+      const url = new URL(window.location.href);
+      ['error', 'error_description', 'error_code'].forEach((k) => url.searchParams.delete(k));
+      window.history.replaceState({}, '', url);
+    }
+  }, []);
+
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       const verified = await verifyWustlEmail(session);
@@ -239,21 +261,46 @@ export default function Home() {
   };
 
   /*
-    Google is the only provider, and that is a constraint rather than a choice.
+    WashU Key (Microsoft Entra ID) is the primary provider, as of August 2026.
 
-    Microsoft Entra ID would be the natural fit, since WashU mailboxes are Microsoft
-    365 rather than Google Workspace. It is not usable: WashU's tenant blocks user
-    consent for third-party multi-tenant apps. Signing into any such app with a
-    @wustl.edu account returns "Need admin approval" -- verified in July 2026 against
-    Notion, a vendor far larger than this project. Adding the button would give every
-    student a primary action that cannot succeed without WashU IT sign-off.
+    This was blocked for a long time and is worth recording why it no longer is.
+    WashU's tenant blocks user consent for third-party multi-tenant apps, so a
+    @wustl.edu account signing into one gets "Need admin approval" -- verified in July
+    2026 against Notion, a vendor far larger than this project. The fix was never a code
+    change: WUIT registered this app and grants consent through the
+    WUIT-AppConsent-WashU-Pointswap group. A student who is not in that group still
+    gets the admin-approval wall, so that group is now the real gate on sign-in.
 
-    The cost of Google-only is real and worth remembering: it works only for students
-    who created a Google account on their @wustl.edu address. Anyone who has not
-    cannot sign in at all, and there is currently no fallback for them.
+    Supabase reaches Entra through its built-in `azure` provider -- there is no custom
+    provider string. `signInWithOAuth` accepts only a fixed enum ('apple' | 'azure' |
+    ... | 'google' | ...), so a WashU-specific identifier does not exist here; the
+    WashU tenant is configured dashboard-side on the Azure provider instead.
+
+    `openid profile email` is requested explicitly because Entra omits the email claim
+    otherwise, and email is what the @wustl.edu check reads.
+
+    Google is kept as a secondary option deliberately. Supabase issues a distinct user
+    for an unlinked identity, and `offers.seller_id` points at that id -- so removing
+    the Google button could orphan the listings and profile of every seller who signed
+    up through it. Remove it only after those accounts are linked or retired.
 
     The domain restriction is not enforced here; see getCurrentUser.
   */
+  const signInWithMicrosoft = async () => {
+    setLoginMsg('');
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'azure',
+      options: {
+        scopes: 'openid profile email',
+        // Deliberately the app origin, not an /auth/callback route: there is no such
+        // route, and the browser client's detectSessionInUrl already exchanges the
+        // code on whatever page it lands on. Adding the path would 404 mid-login.
+        redirectTo: window.location.origin,
+      },
+    });
+    if (error) setLoginMsg(error.message);
+  };
+
   const signInWithGoogle = async () => {
     setLoginMsg('');
     const { error } = await supabase.auth.signInWithOAuth({
@@ -298,7 +345,10 @@ export default function Home() {
     setListingMsg('');
     setListingSuccess(false);
     try {
-      await supabase.from('profiles').upsert({
+      // Checked, not fire-and-forget: the offer row references this profile, so a
+      // failed upsert used to surface one step later as an opaque error about the
+      // offers table instead of naming the step that actually failed.
+      const { error: profileError } = await supabase.from('profiles').upsert({
         id: user.id,
         email: user.email,
         first_name: firstName.trim(),
@@ -306,6 +356,10 @@ export default function Home() {
         contact_info: contactInfo.trim(),
         updated_at: new Date().toISOString()
       });
+      if (profileError) {
+        setListingMsg(`Could not save your seller details: ${profileError.message}`);
+        return;
+      }
       const response = await fetch(`${apiUrl}/offers`, {
         method: 'POST',
         headers: await getAuthHeaders(),
@@ -393,7 +447,18 @@ export default function Home() {
           <div className="bg-panel max-w-md w-full p-12 rounded-[2.5rem] premium-shadow relative border border-edge-solid text-center">
             <button onClick={() => { setShowLogin(false); setLoginMsg(''); }} className="absolute top-6 right-8 text-ink-faint hover:text-ink-strong transition-colors">✕</button>
             <h2 className="text-3xl font-light text-brand-ink italic serif mb-2">Sign in</h2>
-            <p className="text-sm text-ink-mid font-semibold mb-8">Use your <span className="text-brand-ink font-bold">@wustl.edu</span> Google account</p>
+            <p className="text-sm text-ink-mid font-semibold mb-8">Use your <span className="text-brand-ink font-bold">@wustl.edu</span> account</p>
+
+            <button onClick={signInWithMicrosoft} className="w-full py-4 bg-panel-solid border border-line-2 rounded-full font-bold text-sm text-ink-soft shadow-md hover:shadow-lg hover:border-line-2 transition-all flex items-center justify-center gap-3 ripple">
+              <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M1 1h7.6v7.6H1z" fill="#F25022"/><path d="M9.4 1H17v7.6H9.4z" fill="#7FBA00"/><path d="M1 9.4h7.6V17H1z" fill="#00A4EF"/><path d="M9.4 9.4H17V17H9.4z" fill="#FFB900"/></svg>
+              Continue with WashU Key
+            </button>
+
+            <div className="flex items-center gap-4 my-5">
+              <span className="h-px flex-1 bg-line" />
+              <span className="text-micro font-black uppercase tracking-widest text-ink-faint">or</span>
+              <span className="h-px flex-1 bg-line" />
+            </div>
 
             <button onClick={signInWithGoogle} className="w-full py-4 bg-panel-solid border border-line-2 rounded-full font-bold text-sm text-ink-soft shadow-md hover:shadow-lg hover:border-line-2 transition-all flex items-center justify-center gap-3 ripple">
               <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z" fill="#4285F4"/><path d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z" fill="#34A853"/><path d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z" fill="#FBBC05"/><path d="M8.98 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.59A8 8 0 0 0 1.83 5.4L4.5 7.49A4.77 4.77 0 0 1 8.98 3.58z" fill="#EA4335"/></svg>

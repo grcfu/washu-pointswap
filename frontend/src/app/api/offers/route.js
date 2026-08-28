@@ -24,7 +24,8 @@ export async function GET() {
 
 export async function POST(request) {
   try {
-    const userId = await getCurrentUser(request)
+    // `supabase` here acts as the caller; the shared anon client cannot satisfy RLS.
+    const { userId, supabase } = await getCurrentUser(request)
 
     let body
     try {
@@ -48,7 +49,7 @@ export async function POST(request) {
     }
 
     // supabase-js returns no rows from insert unless .select() is chained.
-    const { data, error } = await supabaseServer
+    const { data, error } = await supabase
       .from('offers')
       .insert({
         seller_id: userId,

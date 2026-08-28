@@ -1,11 +1,11 @@
-import { supabaseServer, getCurrentUser, errorResponse, ApiError } from '@/lib/apiAuth'
+import { getCurrentUser, errorResponse, ApiError } from '@/lib/apiAuth'
 
 // POST rather than DELETE to match the existing client call in page.js.
 export async function POST(request, { params }) {
   try {
     // Next.js 16: `params` is a Promise and must be awaited.
     const { offerId } = await params
-    const userId = await getCurrentUser(request)
+    const { userId, supabase } = await getCurrentUser(request)
 
     // Soft delete: stamp deleted_at rather than destroying the row. A hard DELETE
     // threw the listing's price away with it, so the marketplace could never say
@@ -15,7 +15,7 @@ export async function POST(request, { params }) {
     // The seller_id filter is the authorization check — you can only remove your own.
     // Requiring deleted_at to still be null makes removing an already-removed
     // listing a 404 instead of quietly overwriting the original removal time.
-    const { data, error } = await supabaseServer
+    const { data, error } = await supabase
       .from('offers')
       .update({ deleted_at: new Date().toISOString() })
       .eq('id', offerId)
