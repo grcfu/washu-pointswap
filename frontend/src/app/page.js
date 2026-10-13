@@ -500,7 +500,7 @@ export default function Home() {
                 <span className="w-10 h-10 md:w-12 md:h-12 bg-brand-tint text-brand-ink rounded-full flex items-center justify-center text-base md:text-lg font-bold shrink-0">1</span>
                 <div>
                   <p className="text-base md:text-lg font-bold text-ink-2">Browse</p>
-                  <p className="text-sm md:text-base text-ink-muted mt-1 leading-relaxed">Check out listings on the marketplace — no sign-in needed.</p>
+                  <p className="text-sm md:text-base text-ink-muted mt-1 leading-relaxed">Check out listings on the marketplace. No sign-in needed.</p>
                 </div>
               </div>
               <div className="flex gap-5 items-start">
