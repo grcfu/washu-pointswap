@@ -41,7 +41,7 @@ jobs:
           cat /tmp/body.txt
 
           if [ "$code" != "200" ]; then
-            echo "::error::Keepalive failed — the project may be paused or the key rotated."
+            echo "::error::Keepalive failed. The project may be paused or the key rotated."
             exit 1
           fi
           echo "Project is awake."
