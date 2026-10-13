@@ -12,7 +12,7 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 // One client is shared across every request this serverless instance handles, so it
-// must never persist or refresh a session — otherwise one user's token could leak
+// must never persist or refresh a session. Otherwise one user's token could leak
 // into another user's request. Per-request identity comes from getCurrentUser below.
 export const supabaseServer = createClient(supabaseUrl, supabaseKey, {
   auth: { persistSession: false, autoRefreshToken: false },
