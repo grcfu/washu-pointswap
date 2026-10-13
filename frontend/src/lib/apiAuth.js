@@ -53,7 +53,7 @@ export class ApiError extends Error {
 
 // Google OAuth will happily issue a session to any Google account, so the WashU-only
 // rule has to be enforced here. page.js runs the same check to sign non-WashU users
-// out, but that is only UX — a browser-side check is not an authorization boundary.
+// out, but that is only UX; a browser-side check is not an authorization boundary.
 const ALLOWED_EMAIL_DOMAIN = '@wustl.edu'
 
 // Verify the Supabase access token, confirm the account is WashU, and return the
