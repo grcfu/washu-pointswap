@@ -182,8 +182,8 @@ export default function Home() {
   const filteredOffers = showMine ? offers.filter(o => o.seller_id === user?.id) : offers;
   const sortedOffers = [...filteredOffers].sort((a, b) => {
     switch (sortBy) {
-      case 'newest': return (b.id > a.id ? 1 : -1);
-      case 'oldest': return (a.id > b.id ? 1 : -1);
+      case 'newest': return new Date(b.created_at) - new Date(a.created_at);
+      case 'oldest': return new Date(a.created_at) - new Date(b.created_at);
       case 'points-high': return b.amount - a.amount;
       case 'points-low': return a.amount - b.amount;
       case 'best-value': return a.price_per_point - b.price_per_point;
