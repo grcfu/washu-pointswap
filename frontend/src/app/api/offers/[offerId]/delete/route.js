@@ -12,7 +12,7 @@ export async function POST(request, { params }) {
     // what points historically sold for, and a misclick was unrecoverable. Reads
     // filter on `deleted_at is null`, so this still disappears from the site.
     //
-    // The seller_id filter is the authorization check — you can only remove your own.
+    // The seller_id filter is the authorization check: you can only remove your own.
     // Requiring deleted_at to still be null makes removing an already-removed
     // listing a 404 instead of quietly overwriting the original removal time.
     const { data, error } = await supabase
