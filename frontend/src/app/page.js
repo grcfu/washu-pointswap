@@ -514,14 +514,14 @@ export default function Home() {
                 <span className="w-10 h-10 md:w-12 md:h-12 bg-brand-tint text-brand-ink rounded-full flex items-center justify-center text-base md:text-lg font-bold shrink-0">3</span>
                 <div>
                   <p className="text-base md:text-lg font-bold text-ink-2">Buy points</p>
-                  <p className="text-sm md:text-base text-ink-muted mt-1 leading-relaxed">Sign in and tap "Contact" on a listing to see the seller's email or phone, then reach out to arrange the swap.</p>
+                  <p className="text-sm md:text-base text-ink-muted mt-1 leading-relaxed">Sign in and tap &ldquo;Contact&rdquo; on a listing to see the seller&apos;s email or phone, then reach out to arrange the swap.</p>
                 </div>
               </div>
               <div className="flex gap-5 items-start">
                 <span className="w-10 h-10 md:w-12 md:h-12 bg-brand-tint text-brand-ink rounded-full flex items-center justify-center text-base md:text-lg font-bold shrink-0">4</span>
                 <div>
                   <p className="text-base md:text-lg font-bold text-ink-2">After you sell</p>
-                  <p className="text-sm md:text-base text-ink-muted mt-1 leading-relaxed">Tap "Mark as Sold" on your listing to remove it from the marketplace.</p>
+                  <p className="text-sm md:text-base text-ink-muted mt-1 leading-relaxed">Tap &ldquo;Mark as Sold&rdquo; on your listing to remove it from the marketplace.</p>
                 </div>
               </div>
             </div>
