@@ -15,7 +15,7 @@ export const MAX_PRICE_PER_POINT = 3
 
 /*
   Used only to seed the form's example values before any listing exists. Once the
-  marketplace has listings the examples come from live data instead — see
+  marketplace has listings the examples come from live data instead. See
   page.js, where the placeholders are derived from the median of current offers.
 */
 export const FALLBACK_AMOUNT = 300
