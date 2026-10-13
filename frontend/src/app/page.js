@@ -166,7 +166,7 @@ export default function Home() {
       })
       .then(data => setOffers(data))
       .catch(err => {
-        // A TypeError here means the request never reached the API at all —
+        // A TypeError here means the request never reached the API at all:
         // server down, wrong NEXT_PUBLIC_API_URL, or a CORS-less error page.
         // Don't show the browser's raw "Failed to fetch" to students.
         const offline = err instanceof TypeError;
