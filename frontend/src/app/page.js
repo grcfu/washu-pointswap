@@ -153,10 +153,13 @@ export default function Home() {
     }
   }, [user]);
 
-  const fetchOffers = useCallback(() => {
+  const fetchOffers = useCallback(async () => {
     setLoadingOffers(true);
     setFetchError(null);
-    fetch(`${apiUrl}/offers`)
+    // Signed-in students send their token so the API includes seller contact details.
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers = session ? { Authorization: `Bearer ${session.access_token}` } : {};
+    fetch(`${apiUrl}/offers`, { headers })
       .then(res => {
         if (!res.ok) throw new Error('Failed to load listings');
         return res.json();
@@ -173,7 +176,8 @@ export default function Home() {
       .finally(() => setLoadingOffers(false));
   }, []);
 
-  useEffect(() => { fetchOffers(); }, [fetchOffers]);
+  // Wait for auth to settle, and refetch on sign-in/out, since contact details depend on it.
+  useEffect(() => { if (!authLoading) fetchOffers(); }, [fetchOffers, authLoading, user?.id]);
 
   const perPointPreview = amount && price && parseFloat(amount) > 0 ? (parseFloat(price) / parseFloat(amount)).toFixed(4) : null;
   const bestValueId = offers.length > 0 ? offers.reduce((best, o) => o.price_per_point < best.price_per_point ? o : best, offers[0]).id : null;

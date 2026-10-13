@@ -4,14 +4,30 @@ import { supabaseServer, getCurrentUser, errorResponse, ApiError } from '@/lib/a
 import { MIN_AMOUNT, MAX_AMOUNT, MAX_PRICE_PER_POINT } from '@/lib/offerRules'
 
 // Route handlers are not cached by default in Next.js 16, so listings are always live.
-export async function GET() {
+export async function GET(request) {
   try {
+    // Contact details are what the WashU restriction protects, so they are only
+    // selected for a verified @wustl.edu caller. Masking them in the UI alone left
+    // every seller's email or phone in this public response.
+    let canSeeContact = false
+    if (request.headers.get('authorization')) {
+      try {
+        await getCurrentUser(request)
+        canSeeContact = true
+      } catch {
+        // Invalid, expired or non-WashU token: serve the public view.
+      }
+    }
+    const profileColumns = canSeeContact
+      ? 'first_name, last_name, contact_info'
+      : 'first_name, last_name'
+
     // Removed listings are kept as rows with `deleted_at` set (see the delete
     // route), so every read of the live marketplace has to exclude them. Miss this
     // filter and pulled listings reappear on the site.
     const { data, error } = await supabaseServer
       .from('offers')
-      .select('*, profiles(first_name, last_name, contact_info)')
+      .select(`*, profiles(${profileColumns})`)
       .eq('status', 'active')
       .is('deleted_at', null)
 
