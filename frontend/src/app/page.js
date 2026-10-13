@@ -378,7 +378,7 @@ export default function Home() {
         setListingMsg('Live on Market.');
         setTimeout(() => setListingSuccess(false), 3000);
       }
-      else { const data = await response.json(); setListingMsg(data.detail || 'Something went wrong — try again.'); }
+      else { const data = await response.json(); setListingMsg(data.detail || 'Something went wrong. Please try again.'); }
     } catch (err) { setListingMsg('Could not connect to server — check your internet and try again.'); }
     finally { setPosting(false); }
   };
