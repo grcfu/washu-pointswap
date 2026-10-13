@@ -379,7 +379,7 @@ export default function Home() {
         setTimeout(() => setListingSuccess(false), 3000);
       }
       else { const data = await response.json(); setListingMsg(data.detail || 'Something went wrong. Please try again.'); }
-    } catch (err) { setListingMsg('Could not connect to server — check your internet and try again.'); }
+    } catch (err) { setListingMsg('Could not connect to server. Check your internet and try again.'); }
     finally { setPosting(false); }
   };
 
