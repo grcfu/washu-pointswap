@@ -394,7 +394,7 @@ export default function Home() {
       if (response.ok) { fetchOffers(); setListingMsg(''); }
       else {
         const errData = await response.json().catch(() => ({}));
-        setListingMsg(errData.detail || 'Could not remove listing — try again.');
+        setListingMsg(errData.detail || 'Could not remove listing. Please try again.');
       }
     } catch (err) {
       setListingMsg('Could not connect to server — check your internet and try again.');
