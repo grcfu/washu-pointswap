@@ -640,7 +640,7 @@ export default function Home() {
             ) : sortedOffers.length === 0 ? (
               <div className="col-span-full py-32 text-center glass rounded-[3rem] flex flex-col items-center justify-center">
                 <BearMark size={80} className="mb-6 opacity-20" />
-                <p className="serif italic text-ink-faint text-xl">{showMine ? "You haven't listed anything yet." : "No listings yet — be the first!"}</p>
+                <p className="serif italic text-ink-faint text-xl">{showMine ? "You haven't listed anything yet." : "No listings yet. Be the first!"}</p>
               </div>
             ) : (
               sortedOffers.map((offer, index) => (
