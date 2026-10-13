@@ -2,7 +2,7 @@ import Image from 'next/image'
 import bearArt from './bear.png'
 
 /*
-  The Pointswap bear — the single source of truth for the mark, used in the nav, the
+  The Pointswap bear, the single source of truth for the mark, used in the nav, the
   auth loading screen and the empty state.
 
   This is the original hand-drawn illustration with its crimson background knocked
