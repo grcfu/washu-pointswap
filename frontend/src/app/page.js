@@ -12,7 +12,7 @@ import {
   median,
 } from '../lib/offerRules';
 
-// Same-origin route handlers in src/app/api — no CORS, no separate backend host.
+// Same-origin route handlers in src/app/api: no CORS, no separate backend host.
 // Override only to point at the optional FastAPI app in backend/ instead.
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
 
