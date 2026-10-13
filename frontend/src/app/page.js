@@ -397,7 +397,7 @@ export default function Home() {
         setListingMsg(errData.detail || 'Could not remove listing. Please try again.');
       }
     } catch (err) {
-      setListingMsg('Could not connect to server — check your internet and try again.');
+      setListingMsg('Could not connect to server. Check your internet and try again.');
     }
     finally { setDeleting(null); }
   };
